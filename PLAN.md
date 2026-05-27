@@ -1,59 +1,80 @@
-## Latar Belakang & Konteks (Sima Arome)
+SEMUA HAL TERKAIT BUILD ADA DI PLAN.md
 
-**Sima Arome** adalah produsen ekstrak alami asal Indonesia yang menyuplai merek F&B, kosmetik, dan produk kesehatan (*wellness*). Saat ini, operasional mereka dari hulu ke hilir (penerimaan bahan baku, gudang, *Quality Control* (QC), penjadwalan PPIC, hingga pengiriman) masih dilakukan secara manual dan terfragmentasi.
+### 1. Pembagian Peran & Tanggung Jawab (*Role Breakdown*)
 
-**4 Tantangan Utama (Key Challenges):**
+**Anggota 1: Hadryan (Product Manager & Arsitek Sistem)**
 
-1. **Sistem yang Terfragmentasi:** Operator harus memasukkan data yang sama ke berbagai aplikasi berbeda. Proses ini lambat dan rentan terjadi kesalahan.
-2. **Hambatan QC Manual:** Pengecekan kualitas warna dan bubuk masih mengandalkan mata manusia, sehingga produksi bisa terhenti jika staf yang ahli tidak ada.
-3. **Manajemen Penyimpanan via Spreadsheet:** Penempatan drum, pemisahan bahan berbahaya, dan pemantauan rantai pendingin (suhu -4°C hingga -20°C) hanya dicatat di file spreadsheet, bukan sistem terpusat.
-4. **Ketidakjelasan Produksi (*Production Opacity*):** Jadwal PPIC, riwayat *batch/lot*, dan pengiriman sampel masih tersebar di buku catatan fisik dan aplikasi *chat*.
+* **Fokus:** Menjaga visi produk, memastikan alur kerja logis, merancang arsitektur basis data, dan menyusun aset presentasi lomba.
+* **Tugas Teknis & Produk:**
+* Mendefinisikan *API Contracts* dan merancang skema relasi *database* di PostgreSQL (tabel `Users`, `Inventory`, `LotTracking`, `AuditLogs`).
+* Membuat struktur repositori di GitHub dan mengatur *branching* agar proses *vibe coding* tidak saling bentrok.
+* Menyusun *Pitch Deck* sesuai dengan 10 kerangka wajib dari lomba (Problem Statement hingga Call to Action).
+* Membuat *storyboard* dan menjadi sutradara untuk Video Demo 3 menit (syarat wajib).
+
+
+
+**Anggota 2: Benedictus (Backend & Security Engineer)**
+
+* **Fokus:** Membangun *endpoints* berkecepatan tinggi, logika bisnis, dan menembus kriteria *Enterprise Readiness* (bobot 30%).
+* **Tugas Teknis:**
+* Membangun *backend* menggunakan *framework* seperti FastAPI untuk *routing* data yang cepat.
+* Mengimplementasikan *Role-Based Access Control* (RBAC) agar URL QC tidak bisa diakses oleh operator gudang.
+* Membangun fitur *Immutable Audit Trails* (mencatat setiap perubahan data: siapa, jam berapa, apa yang diubah).
+* Melakukan *deployment* aplikasi ke layanan *cloud* seperti AWS atau menggunakan BuildPad untuk meraih poin bonus.
+
+
+
+**Anggota 3: Asher (Frontend / UI Engineer)**
+
+* **Fokus:** Mengubah alur data yang kompleks menjadi antarmuka yang sangat intuitif, mengamankan poin *User Experience & Design* (bobot 20%).
+* **Tugas Teknis:**
+* Membangun 3 *dashboard* antarmuka utama yang berbeda:
+1. **Dashboard Supplier/Intake:** Form input bahan baku masuk dan otomatisasi *generate* ID Lot.
+2. **Dashboard QC:** Layar untuk *approve/reject* status barang.
+3. **Dashboard PPIC & Gudang:** Tabel penjadwalan produksi dan visualisasi denah alokasi drum di gudang.
+
+
+* Memastikan UI responsif dan perpindahan antar halaman terasa instan (tidak ada *loading* yang lama).
+
+
+
+**Anggota 4: Aga (Integration QA & Data Engineer)**
+
+* **Fokus:** Menghubungkan *frontend* dan *backend*, memastikan *state management* berjalan mulus, dan menyiapkan data yang realistis.
+* **Tugas Teknis:**
+* Mengkonsumsi API dari *backend* ke *frontend*.
+* Membuat *script* untuk memasukkan ratusan data *dummy* bahan baku yang relevan dengan Sima Arome (ekstrak alami, F&B, kosmetik) agar saat demo, aplikasinya terlihat "hidup" dan padat data.
+* Melakukan *Quality Assurance* (QA) dengan menguji alur secara ekstrem dari hulu ke hilir untuk memastikan tidak ada fitur yang patah (*broken link*) saat direkam untuk demo.
+
+
 
 ---
 
-## Area Fokus Solusi
+### 2. Timeline Eksekusi 4 Hari (28 Mei - 31 Mei)
 
-Tim peserta dapat memilih satu atau menggabungkan beberapa dari 4 arah solusi berikut:
+**Hari 1 (Kamis, 28 Mei): Fondasi & Arsitektur**
 
-1. **Sistem Operasi Terintegrasi:** Menghubungkan data penerimaan dari *supplier*, gudang, QC, jadwal PPIC, pelacakan lot, dan pengiriman menjadi satu sumber data terpusat (*Single Source of Truth*) untuk menghilangkan input data berulang.
-2. **AI untuk QC Buah & Bahan Baku:** Menggunakan *Computer Vision* untuk menilai tingkat kematangan, warna, cacat, dan benda asing pada bahan baku agar lebih cepat, konsisten, dan dapat diaudit.
-3. **AI untuk QC Ekstrak & Bubuk:** Pemeriksaan visual atau berbasis sensor pada bubuk ekstrak (warna, konsistensi, kontaminasi) untuk menandai produk yang tidak sesuai standar sebelum dikemas.
-4. **Pergudangan & Rantai Pendingin Berbantu AI:** Pengaturan tata letak gudang pintar, pemisahan bahan berbahaya, dan pemantauan suhu rantai pendingin agar produk tidak rusak atau salah tempat.
+* **Anda:** *Setup* repositori GitHub, definisikan skema PostgreSQL, dan tulis draf *Pitch Deck* (Slide 1-3).
+* **Backend:** *Setup environment*, koneksi *database*, dan buat API CRUD dasar untuk modul *Intake*.
+* **Frontend:** Inisialisasi *project*, pasang *library* UI (seperti Tailwind/Chakra UI), dan buat *layout* kerangka (Sidebar, Header, Tabel kosong).
+* **QA/Data:** Mencari dan menyusun daftar data *dummy* industri *flavor & fragrance* dalam format JSON/CSV.
 
----
+**Hari 2 (Jumat, 29 Mei): Integrasi Inti (Vibe Coding Puncak)**
 
-## Syarat & Ketentuan Pengumpulan (*Submission*)
+* **Backend:** Selesaikan fitur RBAC (Sistem Login dengan peran) dan fitur *Audit Trails*.
+* **Frontend:** Selesaikan UI form *Intake* dan halaman persetujuan QC.
+* **Anda & QA:** Mulai tembak data *dummy* lewat API. Pastikan ketika barang diinput, statusnya menggantung di antrean QC.
+* **Anda:** Selesaikan draf kasar *Pitch Deck* (Slide 4-10).
 
-* **Repositori GitHub (Opsional):** Tautan publik yang menyertakan tangkapan layar, langkah instalasi, dan panduan penggunaan di file README.
-* **Video Demo (Wajib):** Maksimal 3 menit, diunggah ke YouTube/Vimeo. Harus menampilkan prototipe yang berjalan, bukan sekadar slide.
-* **Pitch Deck (Wajib):** Format PDF atau ZIP dengan desain yang rapi dan visual (ikuti panduan struktur *slide*).
-* **Tautan Demo Langsung (Wajib):** Prototipe harus *live* (bisa menggunakan Vercel, Netlify, dll), namun sangat disarankan menggunakan platform **BuildPad**.
-* **Catatan Penting:** Dikumpulkan via tautan resmi (*compulsory*), pengumpulan via Devpost opsional. Cukup 1 anggota tim yang mengumpulkan. Bahasa yang digunakan harus **Bahasa Inggris**.
-* **Batas Waktu (Deadline):** 23:59 WIB, 31 Mei 2026.
+**Hari 3 (Sabtu, 30 Mei): Fitur PPIC & Deployment (Krusial!)**
 
----
+* **Frontend & Backend:** Selesaikan modul terakhir (PPIC / *Warehouse Routing*). Pastikan barang yang lolos QC otomatis muncul di jadwal PPIC.
+* **Backend:** Lakukan percobaan *deployment* ke **BuildPad** / AWS. Jangan tunggu hari Minggu!
+* **Anda & Tim:** Uji coba skenario presentasi di aplikasi yang sudah *live* (diakses via *browser*, bukan *localhost*).
 
-## Panduan Struktur Pitch Deck
+**Hari 4 (Minggu, 31 Mei): Perekaman & Finalisasi**
 
-Deck presentasi harus menceritakan ide, bukan hanya kode teknis, dengan urutan berikut:
-
-1. **Problem Statement:** Titik masalah spesifik yang diselesaikan.
-2. **The Solution:** Pengenalan produk dan bagaimana itu menyelesaikan masalah.
-3. **Value Proposition:** Apa yang membuat solusi unik dan lebih baik dari alternatif lain.
-4. **Product Demo:** *Walkthrough* atau tangkapan layar fitur utama.
-5. **Technical Architecture:** Gambaran *tech stack* dan desain sistem.
-6. **Target Audience & Impact:** Pengguna akhir dan metrik dampak solusi.
-7. **Business Viability:** Skalabilitas dan cara produk bisa berkelanjutan (monetisasi).
-8. **Future Roadmap:** Langkah logis proyek selanjutnya (misal: fitur baru, *beta testing*).
-9. **The Team:** Perkenalan singkat anggota dan kompetensi inti.
-10. **Call to Action (CTA):** Langkah selanjutnya bagi audiens (misal: *scan* QR, kunjungi GitHub).
-
----
-
-## Kriteria Penilaian (Total 100%)
-
-1. **Kesiapan Skala Enterprise (30%):** Keamanan, skalabilitas, dokumentasi, *Role-Based Access Control* (RBAC), dan kesiapan untuk produksi nyata. *(Tips: Gunakan BuildPad untuk mendapatkan poin bonus di kategori ini).*
-2. **Kesesuaian Masalah-Solusi (20%):** Seberapa dalam pemahaman terhadap masalah bisnis dan seberapa jelas solusi memecahkan pernyataan masalah resmi.
-3. **Inovasi & Kreativitas (20%):** Orisinalitas pendekatan dan penggunaan teknologi yang inovatif di luar solusi standar.
-4. **Pengalaman Pengguna & Desain / UI/UX (20%):** Kemudahan penggunaan dan desain antarmuka, baik untuk pengguna akhir maupun bagi admin/operator.
-5. **Pitch & Presentasi (10%):** Kejelasan dan daya persuasi dari *pitch deck* serta video demo.
+* **Pagi:** Perbaikan *bug* minor (*UI glitch*). Kunci semua perubahan kode (Tutup proses *Vibe Coding*).
+* **Siang:** Rekam Video Demo (maksimal 3 menit). Tunjukkan *workflow* mulus dari Gudang -> QC -> PPIC.
+* **Sore:** Finalisasi desain PDF *Pitch Deck*. Pastikan repositori GitHub sudah di-set publik dengan file README yang rapi (meskipun opsional, ini menunjukkan profesionalisme).
+* **Malam:** *Submit* melalui tautan wajib lomba sebelum 23:59 WIB.
