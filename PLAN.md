@@ -1,80 +1,96 @@
 SEMUA HAL TERKAIT BUILD ADA DI PLAN.md
 
-### 1. Pembagian Peran & Tanggung Jawab (*Role Breakdown*)
+### 1. Pembagian Peran & Tanggung Jawab (*Role Breakdown*) - *Fully Synchronized*
 
-**Anggota 1: Hadryan (Product Manager & Arsitek Sistem)**
-
-* **Fokus:** Menjaga visi produk, memastikan alur kerja logis, merancang arsitektur basis data, dan menyusun aset presentasi lomba.
-* **Tugas Teknis & Produk:**
-* Mendefinisikan *API Contracts* dan merancang skema relasi *database* di PostgreSQL (tabel `Users`, `Inventory`, `LotTracking`, `AuditLogs`).
-* Membuat struktur repositori di GitHub dan mengatur *branching* agar proses *vibe coding* tidak saling bentrok.
-* Menyusun *Pitch Deck* sesuai dengan 10 kerangka wajib dari lomba (Problem Statement hingga Call to Action).
-* Membuat *storyboard* dan menjadi sutradara untuk Video Demo 3 menit (syarat wajib).
-
-
-
-**Anggota 2: Benedictus (Backend & Security Engineer)**
-
-* **Fokus:** Membangun *endpoints* berkecepatan tinggi, logika bisnis, dan menembus kriteria *Enterprise Readiness* (bobot 30%).
-* **Tugas Teknis:**
-* Membangun *backend* menggunakan *framework* seperti FastAPI untuk *routing* data yang cepat.
-* Mengimplementasikan *Role-Based Access Control* (RBAC) agar URL QC tidak bisa diakses oleh operator gudang.
-* Membangun fitur *Immutable Audit Trails* (mencatat setiap perubahan data: siapa, jam berapa, apa yang diubah).
-* Melakukan *deployment* aplikasi ke layanan *cloud* seperti AWS atau menggunakan BuildPad untuk meraih poin bonus.
-
-
-
-**Anggota 3: Asher (Frontend / UI Engineer)**
-
-* **Fokus:** Mengubah alur data yang kompleks menjadi antarmuka yang sangat intuitif, mengamankan poin *User Experience & Design* (bobot 20%).
-* **Tugas Teknis:**
-* Membangun 3 *dashboard* antarmuka utama yang berbeda:
-1. **Dashboard Supplier/Intake:** Form input bahan baku masuk dan otomatisasi *generate* ID Lot.
-2. **Dashboard QC:** Layar untuk *approve/reject* status barang.
-3. **Dashboard PPIC & Gudang:** Tabel penjadwalan produksi dan visualisasi denah alokasi drum di gudang.
-
-
-* Memastikan UI responsif dan perpindahan antar halaman terasa instan (tidak ada *loading* yang lama).
-
-
-
-**Anggota 4: Aga (Integration QA & Data Engineer)**
-
-* **Fokus:** Menghubungkan *frontend* dan *backend*, memastikan *state management* berjalan mulus, dan menyiapkan data yang realistis.
-* **Tugas Teknis:**
-* Mengkonsumsi API dari *backend* ke *frontend*.
-* Membuat *script* untuk memasukkan ratusan data *dummy* bahan baku yang relevan dengan Sima Arome (ekstrak alami, F&B, kosmetik) agar saat demo, aplikasinya terlihat "hidup" dan padat data.
-* Melakukan *Quality Assurance* (QA) dengan menguji alur secara ekstrem dari hulu ke hilir untuk memastikan tidak ada fitur yang patah (*broken link*) saat direkam untuk demo.
-
-
+**Teknologi Inti (*Tech Stack Consensus*):**
+*   **Database:** PostgreSQL (Relational integrity & Auditability)
+*   **Backend:** FastAPI (Python) - *High performance, auto-generated Swagger docs.*
+*   **Frontend:** Next.js (React) + Tailwind CSS - *Fast rendering, responsive UX.*
+*   **Deployment:** Vercel (Frontend), Railway/Render/BuildPad (Backend & DB)
 
 ---
 
-### 2. Timeline Eksekusi 4 Hari (28 Mei - 31 Mei)
+**Anggota 1: Hadryan (Product Manager & Arsitek Sistem)**
 
-**Hari 1 (Kamis, 28 Mei): Fondasi & Arsitektur**
+*   **Fokus:** Menjaga visi produk, arsitektur data (*Enterprise Readiness*), manajemen proyek (*vibe coding workflow*), dan aset lomba.
+*   **Tugas Teknis & Produk (Actionable Items):**
+    *   [ ] Merancang *Entity Relationship Diagram* (ERD) strict relational untuk PostgreSQL. Tabel wajib (sesuai CONTEXT.md): `users`, `materials`, `lots`, `audit_logs`.
+    *   [ ] Mendefinisikan *API Contracts* (Format Request/Response JSON) di Swagger Docs/Postman.
+    *   [ ] Mengelola *Repository* GitHub: *Setup Branching Strategy* (main, dev, feature-branches) dan *Pull Request templates*.
+    *   [ ] **Deliverable Lomba:** Menyusun *Pitch Deck* (10 slide wajib: Problem -> Solution -> Market -> Traction/Demo -> Team -> CTA).
+    *   [ ] **Deliverable Lomba:** Membuat *storyboard* dan menyutradarai Video Demo (Maks. 3 menit, fokus pada alur *Intake* -> QC -> PPIC).
 
-* **Anda:** *Setup* repositori GitHub, definisikan skema PostgreSQL, dan tulis draf *Pitch Deck* (Slide 1-3).
-* **Backend:** *Setup environment*, koneksi *database*, dan buat API CRUD dasar untuk modul *Intake*.
-* **Frontend:** Inisialisasi *project*, pasang *library* UI (seperti Tailwind/Chakra UI), dan buat *layout* kerangka (Sidebar, Header, Tabel kosong).
-* **QA/Data:** Mencari dan menyusun daftar data *dummy* industri *flavor & fragrance* dalam format JSON/CSV.
+**Anggota 2: Benedictus (Backend & Security Engineer)**
 
-**Hari 2 (Jumat, 29 Mei): Integrasi Inti (Vibe Coding Puncak)**
+*   **Fokus:** Skalabilitas, Keamanan (RBAC), *Immutable Logs*, dan API *Performance* (Bobot 30% *Enterprise Readiness*).
+*   **Tugas Teknis (Actionable Items):**
+    *   [ ] *Setup Environment* FastAPI & Koneksi SQLAlchemy/SQLModel ke PostgreSQL.
+    *   [ ] Implementasi *Authentication* (JWT) & Middleware RBAC yang presisi. (Enum Role Wajib: `SUPER_ADMIN`, `INTAKE_STAFF`, `QC_INSPECTOR`, `PPIC_MANAGER`).
+    *   [ ] Membangun RESTful API *Endpoints* untuk siklus `lots` (*State Machine Rules*):
+        *   **Intake:** Endpoint khusus `INTAKE_STAFF` (Generate `lot_number`, status otomatis `PENDING_QC`).
+        *   **QC:** Endpoint khusus `QC_INSPECTOR` (Ubah status ke `APPROVED` atau `REJECTED`).
+        *   **PPIC:** Endpoint khusus `PPIC_MANAGER` (Assign `warehouse_slot`, ubah status ke `IN_PRODUCTION`).
+    *   [ ] **Enterprise Feature (KRUSIAL):** Menjamin *Immutable Audit Trails*. Dilarang keras melakukan UPDATE pada tabel `lots` tanpa melakukan INSERT ke tabel `audit_logs` di dalam satu transaksi *database* yang sama.
+    *   [ ] Menerapkan standar *Error Handling* & HTTP Status Codes (400, 401, 403, hindari 500 generik).
+    *   [ ] **Deployment:** Persiapkan `Dockerfile` dan manajemen `.env` yang rapi untuk integrasi ke BuildPad/AWS.
 
-* **Backend:** Selesaikan fitur RBAC (Sistem Login dengan peran) dan fitur *Audit Trails*.
-* **Frontend:** Selesaikan UI form *Intake* dan halaman persetujuan QC.
-* **Anda & QA:** Mulai tembak data *dummy* lewat API. Pastikan ketika barang diinput, statusnya menggantung di antrean QC.
-* **Anda:** Selesaikan draf kasar *Pitch Deck* (Slide 4-10).
+**Anggota 3: Asher (Frontend / UI Engineer)**
 
-**Hari 3 (Sabtu, 30 Mei): Fitur PPIC & Deployment (Krusial!)**
+*   **Fokus:** Pengalaman pengguna (*UX*), Antarmuka Intuitif, Responsivitas (Bobot 20% *UX & Design*).
+*   **Tugas Teknis (Actionable Items):**
+    *   [ ] *Setup Project* Next.js + Tailwind CSS + *State Management*.
+    *   [ ] Membangun Sistem *Routing* yang terproteksi (*Protected Routes*) berdasarkan matriks peran (`INTAKE_STAFF`, `QC_INSPECTOR`, `PPIC_MANAGER`, `SUPER_ADMIN`).
+    *   [ ] **Dashboard 1 (Intake Staff):** Form input kedatangan bahan baku. Hanya berhak memanggil API pembuatan `lots` awal (Status `PENDING_QC`).
+    *   [ ] **Dashboard 2 (QC Inspector):** Tabel antrean inspeksi (hanya menampilkan barang dengan status `PENDING_QC`). Terdapat tombol *Approve/Reject*.
+    *   [ ] **Dashboard 3 (PPIC Manager):** Visualisasi gudang & jadwal. Hanya menampilkan barang `APPROVED`. Menyediakan form untuk mengalokasikan `warehouse_slot` dan memproses status menjadi `IN_PRODUCTION`.
+    *   [ ] Memastikan *feedback* instan (*Toast notifications*, *loading skeletons*) saat API dipanggil agar UI terasa premium.
+    *   [ ] *Catatan Penting:* Seluruh *copywriting* di UI harus dalam Bahasa Inggris.
 
-* **Frontend & Backend:** Selesaikan modul terakhir (PPIC / *Warehouse Routing*). Pastikan barang yang lolos QC otomatis muncul di jadwal PPIC.
-* **Backend:** Lakukan percobaan *deployment* ke **BuildPad** / AWS. Jangan tunggu hari Minggu!
-* **Anda & Tim:** Uji coba skenario presentasi di aplikasi yang sudah *live* (diakses via *browser*, bukan *localhost*).
+**Anggota 4: Aga (Integration QA & Data Engineer)**
 
-**Hari 4 (Minggu, 31 Mei): Perekaman & Finalisasi**
+*   **Fokus:** Sinkronisasi API-UI, Data Dummy Skala *Enterprise*, dan Jaminan Mutu (Zero *Bugs* saat Demo).
+*   **Tugas Teknis (Actionable Items):**
+    *   [ ] **Data Engineering:** Membuat *script* injeksi data *dummy* bahan baku industri (*Flavor & Fragrance*) ke dalam tabel `materials`. Menyuntikkan 500+ record variasi pergerakan `lots` (`PENDING_QC`, `APPROVED`, `REJECTED`, `IN_PRODUCTION`).
+    *   [ ] **Integration:** Membantu sinkronisasi *Frontend components* dan API *Backend*.
+    *   [ ] Menangani *State Management* sinkronisasi data (menggunakan SWR atau React Query untuk *auto-refresh* tabel tanpa *reload*).
+    *   [ ] **QA Testing:** Melakukan E2E Testing (Manual) untuk memvalidasi *State Machine*. Contoh celah yang harus dijaga: Pastikan role `INTAKE_STAFF` tidak bisa melakukan persetujuan QC melalui celah API.
+    *   [ ] Melaporkan *bugs/UI glitches* ke *issue tracker* GitHub untuk perbaikan.
 
-* **Pagi:** Perbaikan *bug* minor (*UI glitch*). Kunci semua perubahan kode (Tutup proses *Vibe Coding*).
-* **Siang:** Rekam Video Demo (maksimal 3 menit). Tunjukkan *workflow* mulus dari Gudang -> QC -> PPIC.
-* **Sore:** Finalisasi desain PDF *Pitch Deck*. Pastikan repositori GitHub sudah di-set publik dengan file README yang rapi (meskipun opsional, ini menunjukkan profesionalisme).
-* **Malam:** *Submit* melalui tautan wajib lomba sebelum 23:59 WIB.
+---
+
+### 2. Timeline Eksekusi 4 Hari (28 Mei - 31 Mei) - *Aligned with CONTEXT.md*
+
+*Catatan: Sesuai CONTEXT.md, seluruh basis kode, UI, dan dokumentasi repositori akan ditulis dalam Bahasa Inggris. File PLAN.md ini merupakan panduan internal tim.*
+
+**Hari 1 (Kamis, 28 Mei): Foundation & Database Schema (The Single Source of Truth)**
+
+*   **Milestone:** Infrastruktur dasar siap, *Database* tersambung, dan kerangka aplikasi berjalan di *localhost*.
+*   **Hadryan (PM/Arsitek):** Merancang ERD relasional murni (Tabel `users`, `materials`, `lots`, `audit_logs`). Menyusun Slide 1-3 *Pitch Deck*.
+*   **Benedictus (Backend):** *Setup* FastAPI, SQLAlchemy/SQLModel. Membuat skema dan relasi basis data PostgreSQL.
+*   **Asher (Frontend):** *Setup* Next.js + Tailwind CSS. Membuat kerangka UI dasar (*Sidebar*, form Login).
+*   **Aga (QA/Data):** Mempersiapkan daftar data *dummy* `materials` (Sima Arome) dalam format bahasa Inggris.
+*   **Daily Sync (Malam):** Verifikasi koneksi Frontend ke API "Hello World" dari Backend.
+
+**Hari 2 (Jumat, 29 Mei): RBAC, Audit Logs, & Modul Intake (Vibe Coding Phase 1)**
+
+*   **Milestone:** Sistem Login JWT berfungsi, `INTAKE_STAFF` bisa membuat entri di tabel `lots`, dan `audit_logs` mulai mencatat transaksi secara otomatis (satu transaksi db).
+*   **Benedictus (Backend):** Implementasi JWT Auth & Middleware RBAC (`SUPER_ADMIN`, `INTAKE_STAFF`, `QC_INSPECTOR`, `PPIC_MANAGER`). Membangun API untuk Intake dengan *trigger* `audit_logs`.
+*   **Asher (Frontend):** Membangun UI *Dashboard Intake Staff*. Mengonsumsi API.
+*   **Aga (QA/Data):** Menguji API Intake dengan skenario RBAC positif & negatif via Postman. Menulis *script* injeksi.
+*   **Hadryan (PM/Arsitek):** Menyelesaikan draf *Pitch Deck* (Slide 4-10) dan draf *storyboard* Video Demo.
+*   **Daily Sync (Malam):** Integrasi UI Form Intake dengan Backend. Validasi bahwa tabel `lots` terisi dan tabel `audit_logs` mencatat riwayat penambahan data.
+
+**Hari 3 (Sabtu, 30 Mei): Modul QC, PPIC, & Deployment (Vibe Coding Phase 2)**
+
+*   **Milestone:** *State Machine rules* lengkap (Intake -> QC -> PPIC). Aplikasi di-*deploy* ke BuildPad / AWS.
+*   **Benedictus (Backend):** Membuat API berjenjang khusus `QC_INSPECTOR` (hanya `PENDING_QC` -> `APPROVED`/`REJECTED`) & `PPIC_MANAGER` (hanya `APPROVED` -> tambah `warehouse_slot` & ubah ke `IN_PRODUCTION`). Deploy ke **BuildPad** / AWS.
+*   **Asher (Frontend):** Membangun tabel *approval* (*Dashboard QC*) dan visualisasi penjadwalan/gudang (*Dashboard PPIC*). Pasang *conditional rendering* berdasarkan token JWT.
+*   **Aga (QA/Data):** Menjalankan *script* injeksi skala *enterprise* (500+ *dummy lots*). Melakukan simulasi pengujian ekstrem (memastikan *State Machine Rules* tak bisa dilompati).
+*   **Daily Sync (Sore):** Menguji skenario aplikasi via URL publik (*Cloud*).
+
+**Hari 4 (Minggu, 31 Mei): Freeze, Polishing, & Submission**
+
+*   **Pagi (08:00 - 12:00):** *Code Freeze*! Pembersihan *bug* pada antarmuka, menajamkan teks UI ke dalam bahasa Inggris yang profesional, dan merapikan *Error Handling*.
+*   **Siang (13:00 - 16:00):** Hadryan menyutradarai perekaman Video Demo (maks. 3 menit). Fokuskan demonstrasi pada kelancaran *workflow* dan arsitektur *Enterprise* (Audit Logs & matriks izin RBAC).
+*   **Sore (16:00 - 19:00):** Finalisasi dokumen PDF *Pitch Deck* dan publikasi Video. Cek kelengkapan repositori GitHub (`README.md` dan `Dockerfile` harus ada).
+*   **Malam (19:00 - 23:00):** Tinjauan terakhir keseluruhan aset. *Submit* tugas akhir sebelum batas waktu pukul 23:59 WIB.
