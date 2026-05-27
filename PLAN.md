@@ -12,9 +12,10 @@ SEMUA HAL TERKAIT BUILD ADA DI PLAN.md
 
 **Anggota 1: Hadryan (Product Manager & Arsitek Sistem)**
 
-*   **Fokus:** Menjaga visi produk, arsitektur data (*Enterprise Readiness*), manajemen proyek (*vibe coding workflow*), dan aset lomba.
+*   **Fokus:** Menjaga visi produk, arsitektur data (*Enterprise Readiness*), manajemen proyek (*vibe coding workflow*), koordinasi desain Figma, dan aset lomba.
 *   **Tugas Teknis & Produk (Actionable Items):**
     *   [ ] Merancang *Entity Relationship Diagram* (ERD) strict relational untuk PostgreSQL. Tabel wajib (sesuai CONTEXT.md): `users`, `materials`, `lots`, `audit_logs`.
+    *   [ ] Memastikan desain UI di Figma siap untuk dikonversi ke kode dan mengoordinasikan pemilihan strategi konversi (Plugin, AI Visual, atau Component Library).
     *   [ ] Mendefinisikan *API Contracts* (Format Request/Response JSON) di Swagger Docs/Postman.
     *   [ ] Mengelola *Repository* GitHub: *Setup Branching Strategy* (main, dev, feature-branches) dan *Pull Request templates*.
     *   [ ] **Deliverable Lomba:** Menyusun *Pitch Deck* (10 slide wajib: Problem -> Solution -> Market -> Traction/Demo -> Team -> CTA).
@@ -36,9 +37,13 @@ SEMUA HAL TERKAIT BUILD ADA DI PLAN.md
 
 **Anggota 3: Asher (Frontend / UI Engineer)**
 
-*   **Fokus:** Pengalaman pengguna (*UX*), Antarmuka Intuitif, Responsivitas (Bobot 20% *UX & Design*).
+*   **Fokus:** Pengalaman pengguna (*UX*), Antarmuka Intuitif, Responsivitas (Bobot 20% *UX & Design*), dan Implementasi Desain Figma.
 *   **Tugas Teknis (Actionable Items):**
     *   [ ] *Setup Project* Next.js + Tailwind CSS + *State Management*.
+    *   [ ] **Workflow Figma to Code:** Mengimplementasikan desain dari Figma menggunakan salah satu strategi efisien:
+        *   **Opsi 1 (Plugin):** Menggunakan *Builder.io* atau *Locofy* untuk ekspor komponen langsung ke Next.js.
+        *   **Opsi 2 (AI Visual):** Menggunakan *v0.dev* atau AI Vision (Claude/GPT) untuk men-generate komponen Tailwind berdasarkan tangkapan layar Figma.
+        *   **Opsi 3 (Component Library):** Menggunakan *shadcn/ui* untuk merakit UI yang profesional dan *Enterprise Ready* berdasarkan layout Figma.
     *   [ ] Membangun Sistem *Routing* yang terproteksi (*Protected Routes*) berdasarkan matriks peran (`INTAKE_STAFF`, `QC_INSPECTOR`, `PPIC_MANAGER`, `SUPER_ADMIN`).
     *   [ ] **Dashboard 1 (Intake Staff):** Form input kedatangan bahan baku. Hanya berhak memanggil API pembuatan `lots` awal (Status `PENDING_QC`).
     *   [ ] **Dashboard 2 (QC Inspector):** Tabel antrean inspeksi (hanya menampilkan barang dengan status `PENDING_QC`). Terdapat tombol *Approve/Reject*.
@@ -51,7 +56,7 @@ SEMUA HAL TERKAIT BUILD ADA DI PLAN.md
 *   **Fokus:** Sinkronisasi API-UI, Data Dummy Skala *Enterprise*, dan Jaminan Mutu (Zero *Bugs* saat Demo).
 *   **Tugas Teknis (Actionable Items):**
     *   [ ] **Data Engineering:** Membuat *script* injeksi data *dummy* bahan baku industri (*Flavor & Fragrance*) ke dalam tabel `materials`. Menyuntikkan 500+ record variasi pergerakan `lots` (`PENDING_QC`, `APPROVED`, `REJECTED`, `IN_PRODUCTION`).
-    *   [ ] **Integration:** Membantu sinkronisasi *Frontend components* dan API *Backend*.
+    *   [ ] **Integration:** Membantu sinkronisasi *Frontend components* and API *Backend*.
     *   [ ] Menangani *State Management* sinkronisasi data (menggunakan SWR atau React Query untuk *auto-refresh* tabel tanpa *reload*).
     *   [ ] **QA Testing:** Melakukan E2E Testing (Manual) untuk memvalidasi *State Machine*. Contoh celah yang harus dijaga: Pastikan role `INTAKE_STAFF` tidak bisa melakukan persetujuan QC melalui celah API.
     *   [ ] Melaporkan *bugs/UI glitches* ke *issue tracker* GitHub untuk perbaikan.
