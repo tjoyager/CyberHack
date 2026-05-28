@@ -3,11 +3,11 @@ from typing import Any, Optional
 from uuid import UUID
 
 from fastapi import HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import AuditLog, Lot, LotStatus
-from app.schemas.schemas import LotCreate, LotUpdateQC, LotUpdateWarehouse
+from app.models.models import AuditLog, Lot, LotStatus, DeliveryOrder
+from app.schemas.schemas import LotCreate, LotUpdateQC, LotUpdateWarehouse, DeliveryOrderCreate
 
 
 async def generate_lot_number(db: AsyncSession) -> str:
@@ -36,6 +36,8 @@ async def get_lot(db: AsyncSession, lot_id: UUID) -> Optional[Lot]:
 
 
 async def create_lot(db: AsyncSession, lot_in: LotCreate, user_id: UUID) -> Lot:
+    await db.execute(text("SELECT pg_advisory_xact_lock(hashtext('lot_generation'))"))
+    
     lot_number = await generate_lot_number(db)
     db_obj = Lot(
         lot_number=lot_number,
@@ -107,3 +109,34 @@ async def update_lot_warehouse(
 
     await db.flush()
     return lot
+
+async def create_delivery_order(
+    db: AsyncSession, delivery_in: DeliveryOrderCreate, user_id: UUID
+) -> DeliveryOrder:
+    lot = await db.get(Lot, delivery_in.lot_id, with_for_update=True)
+    if not lot:
+        raise HTTPException(status_code=404, detail=f"Lot {delivery_in.lot_id} not found.")
+
+    if lot.status != LotStatus.IN_PRODUCTION:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid state transition: {lot.status.value} → DELIVERED.",
+        )
+
+    # Update lot status
+    lot.status = LotStatus.DELIVERED
+    lot.updated_at = datetime.now(timezone.utc)
+    lot._current_user_id = user_id
+
+    # Create delivery order
+    delivery = DeliveryOrder(
+        lot_id=delivery_in.lot_id,
+        driver_name=delivery_in.driver_name,
+        vehicle_plate=delivery_in.vehicle_plate,
+        destination=delivery_in.destination,
+        departure_at=delivery_in.departure_at,
+        created_by=user_id
+    )
+    db.add(delivery)
+    await db.flush()
+    return delivery
