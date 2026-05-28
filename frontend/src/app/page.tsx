@@ -1,94 +1,171 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
+import { Package, CheckCircle, Warehouse, FileText } from "lucide-react";
+import Link from "next/link";
 
-export default function LoginPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+export default function LandingPage() {
   const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      // Logic for login API call will go here
-      // For now, simulate success
-      console.log('Logging in with:', { username, password });
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
-    } catch (err) {
-      setError('Invalid username or password');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl shadow-slate-200/50 p-8 border border-slate-100">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Sima Arome</h1>
-          <p className="text-slate-500">ERP Enterprise Readiness Suite</p>
+    <div className="min-h-screen bg-background">
+      <nav className="bg-white border-b border-border sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Package className="w-6 sm:w-8 h-6 sm:h-8 text-primary" />
+            <span className="font-semibold text-base sm:text-xl text-foreground">Sima Arome ERP Lite</span>
+          </div>
+          <div className="flex items-center gap-4 sm:gap-8">
+            <Link href="#features" className="hidden sm:inline text-foreground hover:text-primary transition-colors">Features</Link>
+            <Link href="#workflow" className="hidden sm:inline text-foreground hover:text-primary transition-colors">Workflow</Link>
+            <Link href="#benefits" className="hidden sm:inline text-foreground hover:text-primary transition-colors">Benefits</Link>
+            <button
+              onClick={() => router.push("/login")}
+              className="px-4 sm:px-5 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm sm:text-base"
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+        <div className="text-center max-w-4xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl mb-4 sm:mb-6 text-foreground font-bold">
+            Simplify Material Tracking from Intake to Production
+          </h1>
+          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 px-4">
+            A lightweight ERP system for managing raw material intake, quality control, warehouse routing, and audit trails.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
+            <button
+              onClick={() => router.push("/login")}
+              className="px-6 sm:px-8 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium"
+            >
+              Get Started
+            </button>
+            <button
+              onClick={() => router.push("/login")}
+              className="px-6 sm:px-8 py-3 rounded-lg border-2 border-border bg-white text-foreground hover:bg-secondary/50 transition-colors font-medium"
+            >
+              Login
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm font-medium border border-red-100">
-              {error}
+        <div className="mt-12 sm:mt-16 bg-white rounded-2xl shadow-lg border border-border p-4 sm:p-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 text-center">
+            <div className="p-6 bg-secondary/30 rounded-xl">
+              <div className="text-4xl mb-2 text-primary font-bold">24</div>
+              <div className="text-sm text-muted-foreground">Pending QC</div>
             </div>
-          )}
-
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-              placeholder="Enter your username"
-              required
-            />
+            <div className="p-6 bg-secondary/30 rounded-xl">
+              <div className="text-4xl mb-2 text-green-600 font-bold">156</div>
+              <div className="text-sm text-muted-foreground">Approved Lots</div>
+            </div>
+            <div className="p-6 bg-secondary/30 rounded-xl">
+              <div className="text-4xl mb-2 text-primary font-bold">42</div>
+              <div className="text-sm text-muted-foreground">In Production</div>
+            </div>
+            <div className="p-6 bg-secondary/30 rounded-xl">
+              <div className="text-4xl mb-2 text-destructive font-bold">3</div>
+              <div className="text-sm text-muted-foreground">Rejected Lots</div>
+            </div>
           </div>
+        </div>
+      </section>
 
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
-              placeholder="••••••••"
-              required
-            />
+      <section id="features" className="bg-white py-12 sm:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <h2 className="text-3xl sm:text-4xl text-center mb-8 sm:mb-12 text-foreground font-bold">Features</h2>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="p-6 bg-background rounded-xl border border-border hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                <Package className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="mb-2 text-foreground font-semibold">Raw Material Intake</h3>
+              <p className="text-muted-foreground">
+                Streamline incoming material registration with automated lot numbering and supplier tracking.
+              </p>
+            </div>
+            <div className="p-6 bg-background rounded-xl border border-border hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-lg bg-green-500/10 flex items-center justify-center mb-4">
+                <CheckCircle className="w-6 h-6 text-green-600" />
+              </div>
+              <h3 className="mb-2 text-foreground font-semibold">Quality Control Approval</h3>
+              <p className="text-muted-foreground">
+                Conduct thorough inspections with purity, color index, and moisture content checks.
+              </p>
+            </div>
+            <div className="p-6 bg-background rounded-xl border border-border hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center mb-4">
+                <Warehouse className="w-6 h-6 text-amber-600" />
+              </div>
+              <h3 className="mb-2 text-foreground font-semibold">Warehouse Routing</h3>
+              <p className="text-muted-foreground">
+                Assign warehouse slots and manage material flow from storage to production seamlessly.
+              </p>
+            </div>
+            <div className="p-6 bg-background rounded-xl border border-border hover:shadow-md transition-shadow">
+              <div className="w-12 h-12 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4">
+                <FileText className="w-6 h-6 text-blue-600" />
+              </div>
+              <h3 className="mb-2 text-foreground font-semibold">Audit Trail Monitoring</h3>
+              <p className="text-muted-foreground">
+                Complete transparency with detailed logs of every action, user, and status change.
+              </p>
+            </div>
           </div>
+        </div>
+      </section>
 
+      <section id="workflow" className="py-12 sm:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <h2 className="text-3xl sm:text-4xl text-center mb-8 sm:mb-12 text-foreground font-bold">Workflow</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="p-4 sm:p-6 bg-white rounded-xl border border-border text-center">
+              <Package className="w-8 sm:w-10 h-8 sm:h-10 text-primary mx-auto mb-2 sm:mb-3" />
+              <div className="font-medium text-sm sm:text-base text-foreground">Intake Staff</div>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1">Register materials</div>
+            </div>
+            <div className="p-4 sm:p-6 bg-white rounded-xl border border-border text-center">
+              <CheckCircle className="w-8 sm:w-10 h-8 sm:h-10 text-green-600 mx-auto mb-2 sm:mb-3" />
+              <div className="font-medium text-sm sm:text-base text-foreground">QC Inspector</div>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1">Approve or reject</div>
+            </div>
+            <div className="p-4 sm:p-6 bg-white rounded-xl border border-border text-center">
+              <Warehouse className="w-8 sm:w-10 h-8 sm:h-10 text-primary mx-auto mb-2 sm:mb-3" />
+              <div className="font-medium text-sm sm:text-base text-foreground">PPIC Manager</div>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1">Route to production</div>
+            </div>
+            <div className="p-4 sm:p-6 bg-white rounded-xl border border-border text-center">
+              <FileText className="w-8 sm:w-10 h-8 sm:h-10 text-primary mx-auto mb-2 sm:mb-3" />
+              <div className="font-medium text-sm sm:text-base text-foreground">Audit Log</div>
+              <div className="text-xs sm:text-sm text-muted-foreground mt-1">Full transparency</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="benefits" className="bg-primary py-12 sm:py-20">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl mb-4 sm:mb-6 text-white font-bold">
+            Start managing your material workflow with clarity and control.
+          </h2>
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-4 rounded-xl transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
+            onClick={() => router.push("/login")}
+            className="px-6 sm:px-8 py-3 rounded-lg bg-white text-primary hover:bg-gray-100 transition-colors font-semibold"
           >
-            {loading ? (
-              <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
-            ) : (
-              <span>Sign In</span>
-            )}
+            Get Started Today
           </button>
-        </form>
+        </div>
+      </section>
 
-        <p className="text-center mt-8 text-xs text-slate-400">
-          © 2026 CyberHack Team. Sima Arome Proprietary System.
-        </p>
-      </div>
+      <footer className="bg-white border-t border-border py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center text-sm sm:text-base text-muted-foreground">
+          © 2026 Sima Arome ERP Lite. All rights reserved.
+        </div>
+      </footer>
     </div>
   );
 }
