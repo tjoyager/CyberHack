@@ -1,52 +1,143 @@
+import sys
+import os
 import random
-import uuid
 from datetime import datetime, timedelta
+from uuid import uuid4
+from faker import Faker
+from sqlmodel import Session, create_engine, select
 
-def generate_seed_lots(num_records=550):
-    statuses = ['PENDING_QC', 'APPROVED', 'REJECTED', 'IN_PRODUCTION', 'CONSUMED']
-    status_weights = [0.1, 0.1, 0.05, 0.25, 0.5] 
+# Ensure the backend directory is in the path so we can import our models
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from app.models.models import User, UserRole, Supplier, Material, Lot, LotStatus
+from app.core.config import settings
+
+fake = Faker()
+
+# 1. Configuration
+NUM_SUPPLIERS = 15
+NUM_MATERIALS = 30
+NUM_LOTS = 550
+
+# Target Status Distribution
+STATUS_DISTRIBUTION = {
+    LotStatus.PENDING_QC: 0.15,
+    LotStatus.APPROVED: 0.20,
+    LotStatus.REJECTED: 0.05,
+    LotStatus.IN_PRODUCTION: 0.40,
+    LotStatus.CONSUMED: 0.20
+}
+
+# Industry Specific Names
+EXTRACT_NAMES = [
+    "Premium Vanilla Bean", "Patchouli Oil Extract", "Bergamot Essential Oil",
+    "Sandalwood Mysore Grade", "Lavender Bulgaria Pure", "Cinnamon Bark Extract",
+    "Jasmine Sambac Absolute", "Rose Damascena Oil", "Ylang Ylang Extra",
+    "Peppermint Arvensis", "Lemon Peel Cold Pressed", "Sweet Orange Valencia",
+    "Cedarwood Atlas Oil", "Frankincense Serrata", "Myrrh Resoid",
+    "Geranium Egypt Oil", "Clary Sage Pure", "Vetiver Haiti Root",
+    "Ginger CO2 Extract", "Cardamom Seed Oil"
+]
+
+STORAGE_CONDITIONS = [
+    "Standard Dry (25°C)", "Cool Storage (15°C)", "Cold-chain (5°C)", 
+    "Ultra-low Temp (-20°C)", "Amber Glass / No Light"
+]
+
+def generate_enterprise_data():
+    engine = create_engine(settings.get_database_url)
     
-    sql_statements = ["-- 500+ Simulated Transactional Lots for Demo\n"]
-    material_ids = list(range(1, 21))
-    supplier_ids = list(range(1, 6))
-    base_date = datetime(2026, 1, 1)
-    
-    for i in range(num_records):
-        lot_id = str(uuid.uuid4())
-        material_id = random.choice(material_ids)
-        supplier_id = random.choice(supplier_ids)
+    with Session(engine) as session:
+        print("--- Starting Data Engineering Process ---")
         
-        created_at = base_date + timedelta(days=random.randint(0, 150))
-        lot_number = f"LOT-{created_at.strftime('%Y%m%d')}-{i+100:03d}"
+        # 2. Setup Suppliers
+        suppliers = []
+        for _ in range(NUM_SUPPLIERS):
+            s = Supplier(
+                name=fake.company() + " " + random.choice(["Aromatics", "Extracts", "Distillery", "Oils"]),
+                contact_email=fake.company_email(),
+                is_active=True
+            )
+            session.add(s)
+            suppliers.append(s)
         
-        qty = round(random.uniform(10.0, 500.0), 2)
-        status = random.choices(statuses, weights=status_weights)[0]
+        # 3. Setup Materials
+        materials = []
+        for i in range(NUM_MATERIALS):
+            base_name = random.choice(EXTRACT_NAMES) if i < len(EXTRACT_NAMES) else fake.word().capitalize() + " Extract"
+            m = Material(
+                sku=f"MAT-{fake.unique.numerify('####')}",
+                name=f"{base_name} {random.choice(['Batch A', 'Export Grade', 'Select', 'Prime'])}",
+                uom="KG",
+                storage_condition=random.choice(STORAGE_CONDITIONS),
+                is_active=True
+            )
+            session.add(m)
+            materials.append(m)
         
-        expiry_date = created_at + timedelta(days=random.randint(365, 730))
-        mfg_date = created_at - timedelta(days=random.randint(5, 30))
+        session.commit() # Commit to get IDs
+        print(f"Created {NUM_SUPPLIERS} Suppliers and {NUM_MATERIALS} Materials.")
+
+        # 4. Generate Lots with State Machine Logic
+        statuses = list(STATUS_DISTRIBUTION.keys())
+        weights = list(STATUS_DISTRIBUTION.values())
         
-        rem_qty = qty
-        if status in ['IN_PRODUCTION', 'CONSUMED']:
-            rem_qty = round(qty * random.uniform(0, 0.5), 2) if status == 'IN_PRODUCTION' else 0.0
+        lots_created = 0
+        for _ in range(NUM_LOTS):
+            status = random.choices(statuses, weights=weights)[0]
+            material = random.choice(materials)
+            supplier = random.choice(suppliers)
             
-        warehouse_slot = f"WH-{random.choice(['A', 'B', 'C'])}-{random.randint(1, 20):02d}" if status != 'REJECTED' else None
-        slot_val = f"'{warehouse_slot}'" if warehouse_slot else 'NULL'
-        
-        qc_notes = "Standard inspection passed." if status != 'REJECTED' else "Impurities detected above threshold."
-        
-        stmt = (
-            f"INSERT INTO lots (id, lot_number, material_id, supplier_id, initial_quantity, "
-            f"remaining_quantity, status, warehouse_slot, expiry_date, manufactured_date, qc_notes, created_at) "
-            f"VALUES ('{lot_id}', '{lot_number}', {material_id}, {supplier_id}, {qty}, {rem_qty}, '{status}', "
-            f"{slot_val}, '{expiry_date.date()}', '{mfg_date.date()}', '{qc_notes}', '{created_at}');"
-        )
-        
-        sql_statements.append(stmt)
+            created_at = datetime.now() - timedelta(days=random.randint(0, 180))
+            mfg_date = created_at - timedelta(days=random.randint(5, 30))
+            exp_date = mfg_date + timedelta(days=random.randint(365, 730))
+            
+            qty = round(random.uniform(5.0, 1000.0), 2)
+            
+            # Remaining Qty Logic
+            if status == LotStatus.CONSUMED:
+                rem_qty = 0.0
+            elif status == LotStatus.IN_PRODUCTION:
+                rem_qty = round(qty * random.uniform(0.1, 0.7), 2)
+            else:
+                rem_qty = qty
+            
+            # Warehouse Slot Logic
+            slot = None
+            if status not in [LotStatus.REJECTED, LotStatus.PENDING_QC]:
+                slot = f"ZONE-{random.choice(['A', 'B', 'C'])}-{random.randint(1, 50):02d}"
+            elif status == LotStatus.PENDING_QC and random.random() > 0.5:
+                slot = "INTAKE-STAGING"
 
-    with open('db/03_enterprise_data.sql', 'w') as f:
-        f.write('\n'.join(sql_statements))
-    
-    print(f"Successfully generated db/03_enterprise_data.sql with {num_records} records.")
+            lot = Lot(
+                lot_number=f"LOT-{created_at.strftime('%Y%m%d')}-{fake.unique.numerify('###')}",
+                material_id=material.id,
+                supplier_id=supplier.id,
+                initial_quantity=qty,
+                remaining_quantity=rem_qty,
+                status=status,
+                warehouse_slot=slot,
+                expiry_date=exp_date,
+                manufactured_date=mfg_date,
+                qc_notes="Automated seed data." if status != LotStatus.REJECTED else "Rejected due to high moisture content.",
+                created_at=created_at,
+                updated_at=created_at + timedelta(hours=random.randint(1, 24))
+            )
+            session.add(lot)
+            lots_created += 1
+            
+            if lots_created % 100 == 0:
+                print(f"Generated {lots_created} lots...")
+
+        session.commit()
+        print(f"--- SUCCESS: Generated {lots_created} Transactional Lots ---")
 
 if __name__ == "__main__":
-    generate_seed_lots()
+    try:
+        generate_enterprise_data()
+    except Exception as e:
+        print(f"ERROR during data generation: {e}")
+        print("\nSETUP INSTRUCTIONS:")
+        print("1. Ensure PostgreSQL is running (docker-compose up db)")
+        print("2. Set PYTHONPATH to 'backend' directory")
+        print("3. Run: python3 backend/scripts/generate_dummy_data.py")
