@@ -1,89 +1,75 @@
 'use client';
 
-import { useState } from "react";
-import { Eye, CheckCircle, XCircle, X } from "lucide-react";
-
-interface Lot {
-  lotNumber: string;
-  material: string;
-  supplier: string;
-  quantity: string;
-  expiryDate: string;
-  status: string;
-}
+import { useState, useEffect } from "react";
+import { Eye, CheckCircle, XCircle, X, Loader2 } from "lucide-react";
+import { apiRequest } from "@/lib/api";
 
 export default function QCInspectorPage() {
-  const [lots, setLots] = useState<Lot[]>([
-    {
-      lotNumber: "LOT-2026-001",
-      material: "Vanilla Extract",
-      supplier: "Natural Essence Ltd",
-      quantity: "500 L",
-      expiryDate: "2027-05-28",
-      status: "PENDING_QC",
-    },
-    {
-      lotNumber: "LOT-2026-002",
-      material: "Lavender Oil",
-      supplier: "Herbal Solutions Inc",
-      quantity: "250 L",
-      expiryDate: "2027-06-15",
-      status: "PENDING_QC",
-    },
-    {
-      lotNumber: "LOT-2026-003",
-      material: "Rose Essential Oil",
-      supplier: "Floral Extracts Co",
-      quantity: "100 L",
-      expiryDate: "2027-04-20",
-      status: "APPROVED",
-    },
-    {
-      lotNumber: "LOT-2026-004",
-      material: "Peppermint Oil",
-      supplier: "Mint Fresh Ltd",
-      quantity: "300 L",
-      expiryDate: "2027-07-10",
-      status: "REJECTED",
-    },
-  ]);
+  const [lots, setLots] = useState<any[]>([]);
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [inspectionModal, setInspectionModal] = useState<{ open: boolean; lot: Lot | null }>({
+  const [inspectionModal, setInspectionModal] = useState<{ open: boolean; lot: any | null }>({
     open: false,
     lot: null,
   });
 
   const [inspectionData, setInspectionData] = useState({
-    purity: "",
-    colorIndex: "",
-    moistureContent: "",
-    notes: "",
+    qc_notes: "",
+    rejection_reason: "",
   });
 
-  const openInspection = (lot: Lot) => {
-    setInspectionModal({ open: true, lot });
-    setInspectionData({ purity: "", colorIndex: "", moistureContent: "", notes: "" });
-  };
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const handleApprove = () => {
-    if (inspectionModal.lot) {
-      setLots(
-        lots.map((lot) =>
-          lot.lotNumber === inspectionModal.lot!.lotNumber ? { ...lot, status: "APPROVED" } : lot
-        )
-      );
-      setInspectionModal({ open: false, lot: null });
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("accessToken");
+      if (!token) return;
+
+      const [lotsData, materialsData] = await Promise.all([
+        apiRequest("/lots", "GET", undefined, token),
+        apiRequest("/materials", "GET", undefined, token),
+      ]);
+
+      setLots(lotsData);
+      setMaterials(materialsData);
+    } catch (error: any) {
+      console.error("Failed to fetch QC data:", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleReject = () => {
-    if (inspectionModal.lot) {
-      setLots(
-        lots.map((lot) =>
-          lot.lotNumber === inspectionModal.lot!.lotNumber ? { ...lot, status: "REJECTED" } : lot
-        )
-      );
+  const openInspection = (lot: any) => {
+    setInspectionModal({ open: true, lot });
+    setInspectionData({ qc_notes: "", rejection_reason: "" });
+  };
+
+  const handleUpdateStatus = async (status: string) => {
+    if (!inspectionModal.lot) return;
+    setSubmitting(true);
+    try {
+      const token = localStorage.getItem("accessToken");
+      if (!token) throw new Error("Not authenticated");
+
+      await apiRequest(`/lots/${inspectionModal.lot.id}/qc`, "PATCH", {
+        status,
+        qc_notes: inspectionData.qc_notes,
+        rejection_reason: status === 'REJECTED' ? inspectionData.rejection_reason : undefined,
+      }, token);
+
+      // Refresh list
+      const lotsData = await apiRequest("/lots", "GET", undefined, token);
+      setLots(lotsData);
       setInspectionModal({ open: false, lot: null });
+    } catch (error: any) {
+      alert("Error: " + error.message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -95,6 +81,14 @@ export default function QCInspectorPage() {
       default: return "bg-slate-100 text-slate-700 border-slate-200";
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -108,21 +102,19 @@ export default function QCInspectorPage() {
               <tr>
                 <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Lot Number</th>
                 <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Material</th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Supplier</th>
                 <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Quantity</th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Expiry Date</th>
                 <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
                 <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider text-center">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {lots.map((lot, index) => (
-                <tr key={index} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-bold text-foreground">{lot.lotNumber}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{lot.material}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{lot.supplier}</td>
-                  <td className="px-6 py-4 text-sm text-foreground font-medium">{lot.quantity}</td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground font-medium">{lot.expiryDate}</td>
+              {lots.map((lot) => (
+                <tr key={lot.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 text-sm font-bold text-foreground">{lot.lot_number}</td>
+                  <td className="px-6 py-4 text-sm text-foreground">
+                    {materials.find(m => m.id === lot.material_id)?.name || "Unknown"}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-foreground font-medium">{lot.quantity_kg} KG</td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(lot.status)}`}>
                       {lot.status.replace(/_/g, " ")}
@@ -155,7 +147,7 @@ export default function QCInspectorPage() {
               <div>
                 <h2 className="text-xl font-bold text-foreground">QC Inspection</h2>
                 <p className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-wider">
-                  {inspectionModal.lot.lotNumber} • {inspectionModal.lot.material}
+                  {inspectionModal.lot.lot_number} • {materials.find(m => m.id === inspectionModal.lot.material_id)?.name}
                 </p>
               </div>
               <button
@@ -167,59 +159,41 @@ export default function QCInspectorPage() {
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Purity (%)</label>
-                <input
-                  type="number"
-                  value={inspectionData.purity}
-                  onChange={(e) => setInspectionData({ ...inspectionData, purity: e.target.value })}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
-                  placeholder="e.g., 99.5"
-                />
-              </div>
-              <div>
-                <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Color Index</label>
-                <input
-                  type="text"
-                  value={inspectionData.colorIndex}
-                  onChange={(e) => setInspectionData({ ...inspectionData, colorIndex: e.target.value })}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
-                  placeholder="e.g., 1.5"
-                />
-              </div>
-              <div>
-                <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Moisture Content (%)</label>
-                <input
-                  type="number"
-                  value={inspectionData.moistureContent}
-                  onChange={(e) => setInspectionData({ ...inspectionData, moistureContent: e.target.value })}
-                  className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
-                  placeholder="e.g., 0.8"
-                />
-              </div>
-              <div>
                 <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">QC Notes</label>
                 <textarea
-                  value={inspectionData.notes}
-                  onChange={(e) => setInspectionData({ ...inspectionData, notes: e.target.value })}
+                  value={inspectionData.qc_notes}
+                  onChange={(e) => setInspectionData({ ...inspectionData, qc_notes: e.target.value })}
                   className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring resize-none text-sm font-medium"
                   rows={3}
                   placeholder="Additional observations..."
                 />
               </div>
+              <div>
+                <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider text-red-600">Rejection Reason (If Rejecting)</label>
+                <textarea
+                  value={inspectionData.rejection_reason}
+                  onChange={(e) => setInspectionData({ ...inspectionData, rejection_reason: e.target.value })}
+                  className="w-full px-4 py-2 border border-red-100 rounded-lg bg-red-50/30 focus:outline-none focus:ring-2 focus:ring-red-200 resize-none text-sm font-medium"
+                  rows={2}
+                  placeholder="Why is this lot rejected?"
+                />
+              </div>
             </div>
             <div className="p-6 border-t border-border flex flex-col sm:flex-row gap-3">
               <button
-                onClick={handleApprove}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors font-bold text-sm shadow-sm shadow-green-200"
+                onClick={() => handleUpdateStatus('APPROVED')}
+                disabled={submitting}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors font-bold text-sm shadow-sm shadow-green-200 disabled:opacity-50"
               >
-                <CheckCircle className="w-5 h-5" />
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle className="w-5 h-5" />}
                 Approve Lot
               </button>
               <button
-                onClick={handleReject}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-bold text-sm shadow-sm shadow-red-200"
+                onClick={() => handleUpdateStatus('REJECTED')}
+                disabled={submitting || !inspectionData.rejection_reason}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors font-bold text-sm shadow-sm shadow-red-200 disabled:opacity-50"
               >
-                <XCircle className="w-5 h-5" />
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
                 Reject Lot
               </button>
             </div>
