@@ -1,126 +1,80 @@
-from typing import Any, List, Optional
-from datetime import datetime
+"""
+Lot lifecycle endpoints: intake → QC → PPIC → Delivery.
+
+Business rules (CONTEXT.md §7):
+  - PENDING_QC  → APPROVED/REJECTED  : Only QC_INSPECTOR
+  - APPROVED    → IN_PRODUCTION       : Only PPIC_MANAGER (requires warehouse_slot)
+  - IN_PRODUCTION → DELIVERED         : Only DELIVERY_STAFF (requires delivery_order)
+  - Every UPDATE writes to audit_logs in the SAME transaction.
+"""
+
+from datetime import datetime, timezone
+from typing import Any, Optional
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import Session, select, text
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.api.v1 import deps
-from app.core.db import get_session
-from app.models.models import Lot, User, UserRole, LotStatus
-from app.schemas.schemas import LotCreate, LotRead, LotUpdateStatus
+from app.core.db import get_db
+from app.crud import crud_lot
+from app.models.models import LotStatus, User, UserRole
+from app.schemas.schemas import LotCreate, LotRead, LotUpdateQC, LotUpdateWarehouse
 
 router = APIRouter()
 
-def set_db_user(db: Session, user_id: str):
-    # SQLite (used in tests) doesn't support 'SET LOCAL'
-    if db.bind.dialect.name == "sqlite":
-        return
-    db.execute(text(f"SET LOCAL app.current_user_id = '{user_id}'"))
-
-@router.get("/", response_model=List[LotRead])
-def read_lots(
-    db: Session = Depends(get_session),
+@router.get("/", response_model=list[LotRead])
+async def read_lots(
+    db: AsyncSession = Depends(get_db),
     skip: int = 0,
     limit: int = 100,
-    status: Optional[LotStatus] = None,
+    lot_status: Optional[LotStatus] = None,
     current_user: User = Depends(deps.get_current_user),
 ) -> Any:
-    statement = select(Lot)
-    if status:
-        statement = statement.where(Lot.status == status)
-    lots = db.exec(statement.offset(skip).limit(limit)).all()
+    """List lots, optionally filtered by status."""
+    lots = await crud_lot.get_lots(db, skip=skip, limit=limit, lot_status=lot_status)
     return lots
 
-@router.post("/", response_model=LotRead)
-def create_lot(
-    *,
-    db: Session = Depends(get_session),
-    lot_in: LotCreate,
-    current_user: User = Depends(deps.check_role([UserRole.INTAKE_STAFF]))
+@router.get("/{lot_id}", response_model=LotRead)
+async def read_lot(
+    lot_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user),
 ) -> Any:
-    # Generate lot number: LOT-YYYYMMDD-SEQUENCE
-    today = datetime.now().strftime("%Y%m%d")
-    count_stmt = select(text("count(*)")).select_from(Lot).where(text(f"lot_number LIKE 'LOT-{today}-%'"))
-    count = db.exec(count_stmt).first()
-    lot_number = f"LOT-{today}-{(count or 0) + 1:03d}"
-    
-    db_obj = Lot(
-        **lot_in.model_dump(),
-        lot_number=lot_number,
-        remaining_quantity=lot_in.initial_quantity,
-        status=LotStatus.PENDING_QC
-    )
-    
-    set_db_user(db, str(current_user.id))
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj
+    """Get a single lot by ID."""
+    lot = await crud_lot.get_lot(db, lot_id)
+    if not lot:
+        raise HTTPException(status_code=404, detail=f"Lot {lot_id} not found.")
+    return lot
+
+@router.post("/", response_model=LotRead, status_code=status.HTTP_201_CREATED)
+async def create_lot(
+    lot_in: LotCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.check_role([UserRole.INTAKE_STAFF])),
+) -> Any:
+    """Create a new lot — auto-generates lot_number, sets status PENDING_QC."""
+    lot = await crud_lot.create_lot(db, lot_in, current_user.id)
+    return lot
 
 @router.patch("/{lot_id}/qc", response_model=LotRead)
-def update_lot_qc(
-    *,
-    db: Session = Depends(get_session),
+async def update_lot_qc(
     lot_id: UUID,
-    lot_update: LotUpdateStatus,
-    current_user: User = Depends(deps.check_role([UserRole.QC_INSPECTOR]))
+    lot_update: LotUpdateQC,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.check_role([UserRole.QC_INSPECTOR])),
 ) -> Any:
-    db_obj = db.get(Lot, lot_id)
-    if not db_obj:
-        raise HTTPException(status_code=404, detail="Lot not found")
-    
-    if db_obj.status != LotStatus.PENDING_QC:
-        raise HTTPException(status_code=400, detail="QC Inspector can only update lots in PENDING_QC status")
-    
-    if lot_update.status not in [LotStatus.APPROVED, LotStatus.REJECTED]:
-        raise HTTPException(status_code=400, detail="QC Inspector can only set status to APPROVED or REJECTED")
+    """QC Inspector approves or rejects a PENDING_QC lot."""
+    lot = await crud_lot.update_lot_qc(db, lot_id, lot_update, current_user.id)
+    return lot
 
-    db_obj.status = lot_update.status
-    db_obj.qc_notes = lot_update.qc_notes
-    db_obj.qc_metrics = lot_update.qc_metrics
-    db_obj.updated_at = datetime.utcnow()
-    
-    set_db_user(db, str(current_user.id))
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj
-
-@router.patch("/{lot_id}/ppic", response_model=LotRead)
-def update_lot_ppic(
-    *,
-    db: Session = Depends(get_session),
+@router.patch("/{lot_id}/warehouse", response_model=LotRead)
+async def update_lot_warehouse(
     lot_id: UUID,
-    lot_update: LotUpdateStatus,
-    current_user: User = Depends(deps.check_role([UserRole.PPIC_MANAGER]))
+    lot_update: LotUpdateWarehouse,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(deps.check_role([UserRole.PPIC_MANAGER])),
 ) -> Any:
-    db_obj = db.get(Lot, lot_id)
-    if not db_obj:
-        raise HTTPException(status_code=404, detail="Lot not found")
-    
-    if db_obj.status != LotStatus.APPROVED:
-        raise HTTPException(status_code=400, detail="Only APPROVED lots can be routed by PPIC")
-    
-    if not lot_update.warehouse_slot:
-        raise HTTPException(status_code=400, detail="Warehouse slot is required for PPIC routing")
-
-    db_obj.status = lot_update.status or LotStatus.IN_PRODUCTION
-    db_obj.warehouse_slot = lot_update.warehouse_slot
-    db_obj.updated_at = datetime.utcnow()
-    
-    set_db_user(db, str(current_user.id))
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj
-
-@router.get("/{lot_id}", response_model=LotRead)
-def read_lot(
-    *,
-    db: Session = Depends(get_session),
-    lot_id: UUID,
-    current_user: User = Depends(deps.get_current_user)
-) -> Any:
-    db_obj = db.get(Lot, lot_id)
-    if not db_obj:
-        raise HTTPException(status_code=404, detail="Lot not found")
-    return db_obj
+    """PPIC Manager assigns warehouse slot — APPROVED → IN_PRODUCTION."""
+    lot = await crud_lot.update_lot_warehouse(db, lot_id, lot_update, current_user.id)
+    return lot
