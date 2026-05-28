@@ -2,10 +2,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine
 from sqlmodel.pool import StaticPool
-from backend.app.main import app
-from backend.app.core.db import get_session
-from backend.app.models.models import User, UserRole
-from backend.app.core.security import get_password_hash
+from app.main import app
+from app.core.db import get_session
+from app.models.models import User, UserRole
+from app.core.security import get_password_hash
 
 # Setup in-memory SQLite for testing
 engine = create_engine(

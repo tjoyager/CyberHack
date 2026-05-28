@@ -3,10 +3,10 @@ from fastapi.testclient import TestClient
 from sqlmodel import Session, SQLModel, create_engine, select
 from sqlmodel.pool import StaticPool
 from datetime import datetime
-from backend.app.main import app
-from backend.app.core.db import get_session
-from backend.app.models.models import User, UserRole, Material, Supplier, Lot, LotStatus
-from backend.app.core.security import get_password_hash, create_access_token
+from app.main import app
+from app.core.db import get_session
+from app.models.models import User, UserRole, Material, Supplier, Lot, LotStatus
+from app.core.security import get_password_hash, create_access_token
 
 # Setup in-memory SQLite for testing
 engine = create_engine(
@@ -86,12 +86,42 @@ def test_qc_approve_lot(client: TestClient, session: Session):
     token = get_token(str(user_qc.id))
     
     response = client.patch(
-        f"/api/v1/lots/{lot.id}",
+        f"/api/v1/lots/{lot.id}/qc",
         json={"status": "APPROVED", "qc_notes": "All good"},
         headers={"Authorization": f"Bearer {token}"}
     )
     assert response.status_code == 200
     assert response.json()["status"] == LotStatus.APPROVED
+
+def test_ppic_route_lot(client: TestClient, session: Session):
+    # 1. Create an APPROVED lot
+    lot = Lot(
+        lot_number="LOT-TEST-003",
+        material_id=1,
+        supplier_id=1,
+        initial_quantity=50.0,
+        remaining_quantity=50.0,
+        status=LotStatus.APPROVED,
+        expiry_date=datetime(2027, 1, 1)
+    )
+    session.add(lot)
+    session.commit()
+    
+    # Create PPIC user
+    u_ppic = User(username="ppic", password_hash="hash", role=UserRole.PPIC_MANAGER)
+    session.add(u_ppic)
+    session.commit()
+    
+    token = get_token(str(u_ppic.id))
+    
+    response = client.patch(
+        f"/api/v1/lots/{lot.id}/ppic",
+        json={"warehouse_slot": "ZONE-B-01", "status": "IN_PRODUCTION"},
+        headers={"Authorization": f"Bearer {token}"}
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == LotStatus.IN_PRODUCTION
+    assert response.json()["warehouse_slot"] == "ZONE-B-01"
 
 def test_rbac_intake_cannot_approve(client: TestClient, session: Session):
     lot = Lot(
@@ -110,7 +140,7 @@ def test_rbac_intake_cannot_approve(client: TestClient, session: Session):
     token = get_token(str(user_intake.id))
     
     response = client.patch(
-        f"/api/v1/lots/{lot.id}",
+        f"/api/v1/lots/{lot.id}/qc",
         json={"status": "APPROVED"},
         headers={"Authorization": f"Bearer {token}"}
     )

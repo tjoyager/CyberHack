@@ -1,26 +1,647 @@
-@import "tailwindcss";
+import { useState } from "react";
+import {
+  Package,
+  ClipboardCheck,
+  CalendarClock,
+  FileText,
+  Search,
+  Download,
+  Upload,
+  Filter,
+  Plus,
+  MoreVertical,
+  AlertCircle,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Bell,
+  Settings,
+  User
+} from "lucide-react";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "./components/ui/table";
+import { Badge } from "./components/ui/badge";
+import { Card, CardContent } from "./components/ui/card";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+type Section = "intake" | "qc" | "ppic" | "auditlog";
+
+interface NavItem {
+  id: Section;
+  label: string;
+  icon: React.ReactNode;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+const navItems: NavItem[] = [
+  { id: "intake", label: "Intake", icon: <Package className="w-5 h-5" /> },
+  { id: "qc", label: "Quality Control", icon: <ClipboardCheck className="w-5 h-5" /> },
+  { id: "ppic", label: "PPIC", icon: <CalendarClock className="w-5 h-5" /> },
+  { id: "auditlog", label: "Audit Log", icon: <FileText className="w-5 h-5" /> },
+];
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+// Mock data for Intake
+const intakeData = [
+  { id: "IN-001", supplier: "PT Maju Jaya", material: "Raw Material A", qty: 500, unit: "kg", date: "2024-01-15", status: "pending" },
+  { id: "IN-002", supplier: "CV Sukses Makmur", material: "Raw Material B", qty: 250, unit: "kg", date: "2024-01-15", status: "approved" },
+  { id: "IN-003", supplier: "PT Sejahtera", material: "Raw Material C", qty: 750, unit: "kg", date: "2024-01-14", status: "pending" },
+  { id: "IN-004", supplier: "UD Berkah", material: "Raw Material D", qty: 300, unit: "kg", date: "2024-01-14", status: "rejected" },
+  { id: "IN-005", supplier: "PT Global Indo", material: "Raw Material E", qty: 600, unit: "kg", date: "2024-01-13", status: "approved" },
+];
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+// Mock data for QC
+const qcData = [
+  { id: "QC-001", batchNo: "BTH-2024-001", product: "Product Alpha", inspector: "John Doe", date: "2024-01-15", status: "passed" },
+  { id: "QC-002", batchNo: "BTH-2024-002", product: "Product Beta", inspector: "Jane Smith", date: "2024-01-15", status: "failed" },
+  { id: "QC-003", batchNo: "BTH-2024-003", product: "Product Gamma", inspector: "Bob Wilson", date: "2024-01-14", status: "pending" },
+  { id: "QC-004", batchNo: "BTH-2024-004", product: "Product Delta", inspector: "Alice Brown", date: "2024-01-14", status: "passed" },
+  { id: "QC-005", batchNo: "BTH-2024-005", product: "Product Epsilon", inspector: "Charlie Davis", date: "2024-01-13", status: "pending" },
+];
+
+// Mock data for PPIC
+const ppicData = [
+  { id: "PP-001", orderNo: "ORD-2024-001", product: "Product Alpha", planQty: 1000, actualQty: 950, date: "2024-01-20", status: "inprogress" },
+  { id: "PP-002", orderNo: "ORD-2024-002", product: "Product Beta", planQty: 500, actualQty: 500, date: "2024-01-22", status: "completed" },
+  { id: "PP-003", orderNo: "ORD-2024-003", product: "Product Gamma", planQty: 750, actualQty: 0, date: "2024-01-25", status: "scheduled" },
+  { id: "PP-004", orderNo: "ORD-2024-004", product: "Product Delta", planQty: 300, actualQty: 280, date: "2024-01-18", status: "inprogress" },
+  { id: "PP-005", orderNo: "ORD-2024-005", product: "Product Epsilon", planQty: 450, actualQty: 450, date: "2024-01-16", status: "completed" },
+];
+
+// Mock data for Audit Log
+const auditLogData = [
+  { id: "1", timestamp: "2024-01-15 14:30:25", user: "admin@company.com", action: "Create", module: "Intake", description: "Created intake record IN-002" },
+  { id: "2", timestamp: "2024-01-15 14:15:10", user: "qc@company.com", action: "Update", module: "QC", description: "Updated QC status for QC-001 to Passed" },
+  { id: "3", timestamp: "2024-01-15 13:45:00", user: "ppic@company.com", action: "Create", module: "PPIC", description: "Created production plan PP-001" },
+  { id: "4", timestamp: "2024-01-15 13:20:30", user: "admin@company.com", action: "Delete", module: "Intake", description: "Deleted intake record IN-999" },
+  { id: "5", timestamp: "2024-01-15 12:55:15", user: "qc@company.com", action: "Update", module: "QC", description: "Updated QC status for QC-002 to Failed" },
+  { id: "6", timestamp: "2024-01-15 12:30:00", user: "ppic@company.com", action: "Update", module: "PPIC", description: "Updated actual quantity for PP-002" },
+  { id: "7", timestamp: "2024-01-15 11:45:20", user: "admin@company.com", action: "Create", module: "Intake", description: "Created intake record IN-001" },
+];
+
+export default function App() {
+  const [activeSection, setActiveSection] = useState<Section>("intake");
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      pending: { label: "Pending", variant: "outline" },
+      approved: { label: "Approved", variant: "default" },
+      rejected: { label: "Rejected", variant: "destructive" },
+      passed: { label: "Passed", variant: "default" },
+      failed: { label: "Failed", variant: "destructive" },
+      inprogress: { label: "In Progress", variant: "secondary" },
+      completed: { label: "Completed", variant: "default" },
+      scheduled: { label: "Scheduled", variant: "outline" },
+    };
+
+    const config = statusConfig[status] || { label: status, variant: "outline" };
+    return <Badge variant={config.variant}>{config.label}</Badge>;
+  };
+
+  const getActionBadge = (action: string) => {
+    const actionConfig: Record<string, { variant: "default" | "secondary" | "destructive" | "outline" }> = {
+      Create: { variant: "default" },
+      Update: { variant: "secondary" },
+      Delete: { variant: "destructive" },
+    };
+
+    const config = actionConfig[action] || { variant: "outline" };
+    return <Badge variant={config.variant}>{action}</Badge>;
+  };
+
+  const renderKPICards = () => {
+    if (activeSection === "intake") {
+      return (
+        <div className="grid grid-cols-12 gap-6 mb-6">
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Intake</p>
+                  <h3 className="text-2xl font-semibold mt-2">2,400 kg</h3>
+                  <p className="text-xs text-muted-foreground mt-1">This month</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Package className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Pending Review</p>
+                  <h3 className="text-2xl font-semibold mt-2">2</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Requires action</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Approved</p>
+                  <h3 className="text-2xl font-semibold mt-2">2</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Ready for QC</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Rejected</p>
+                  <h3 className="text-2xl font-semibold mt-2">1</h3>
+                  <p className="text-xs text-muted-foreground mt-1">This week</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-red-500/10 flex items-center justify-center">
+                  <XCircle className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (activeSection === "qc") {
+      return (
+        <div className="grid grid-cols-12 gap-6 mb-6">
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Inspections</p>
+                  <h3 className="text-2xl font-semibold mt-2">127</h3>
+                  <p className="text-xs text-muted-foreground mt-1">This month</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ClipboardCheck className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Pass Rate</p>
+                  <h3 className="text-2xl font-semibold mt-2">94.5%</h3>
+                  <p className="text-xs text-green-600 mt-1">+2.3% from last month</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Pending Tests</p>
+                  <h3 className="text-2xl font-semibold mt-2">2</h3>
+                  <p className="text-xs text-muted-foreground mt-1">In queue</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-yellow-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Failed Tests</p>
+                  <h3 className="text-2xl font-semibold mt-2">1</h3>
+                  <p className="text-xs text-muted-foreground mt-1">This week</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-red-500/10 flex items-center justify-center">
+                  <AlertCircle className="w-6 h-6 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (activeSection === "ppic") {
+      return (
+        <div className="grid grid-cols-12 gap-6 mb-6">
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Active Orders</p>
+                  <h3 className="text-2xl font-semibold mt-2">12</h3>
+                  <p className="text-xs text-muted-foreground mt-1">In production</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <CalendarClock className="w-6 h-6 text-primary" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">On Schedule</p>
+                  <h3 className="text-2xl font-semibold mt-2">85%</h3>
+                  <p className="text-xs text-green-600 mt-1">Meeting targets</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-green-500/10 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Completed</p>
+                  <h3 className="text-2xl font-semibold mt-2">2</h3>
+                  <p className="text-xs text-muted-foreground mt-1">This week</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                  <CheckCircle className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Capacity Used</p>
+                  <h3 className="text-2xl font-semibold mt-2">72%</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Current week</p>
+                </div>
+                <div className="h-12 w-12 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                  <CalendarClock className="w-6 h-6 text-purple-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  const renderContent = () => {
+    if (activeSection === "intake") {
+      return (
+        <div>
+          {renderKPICards()}
+          <Card>
+            <CardContent className="p-0">
+              <div className="border-b border-border p-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Material Intake Records</h2>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Search records..." className="pl-9 w-64 h-10" />
+                  </div>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button size="default" className="h-10">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Intake
+                  </Button>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Supplier</TableHead>
+                    <TableHead>Material</TableHead>
+                    <TableHead>Quantity</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {intakeData.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.id}</TableCell>
+                      <TableCell>{item.supplier}</TableCell>
+                      <TableCell>{item.material}</TableCell>
+                      <TableCell>{item.qty} {item.unit}</TableCell>
+                      <TableCell>{item.date}</TableCell>
+                      <TableCell>{getStatusBadge(item.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (activeSection === "qc") {
+      return (
+        <div>
+          {renderKPICards()}
+          <Card>
+            <CardContent className="p-0">
+              <div className="border-b border-border p-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Quality Control Inspections</h2>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Search inspections..." className="pl-9 w-64 h-10" />
+                  </div>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button size="default" className="h-10">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Inspection
+                  </Button>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Batch No</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Inspector</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {qcData.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.id}</TableCell>
+                      <TableCell>{item.batchNo}</TableCell>
+                      <TableCell>{item.product}</TableCell>
+                      <TableCell>{item.inspector}</TableCell>
+                      <TableCell>{item.date}</TableCell>
+                      <TableCell>{getStatusBadge(item.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (activeSection === "ppic") {
+      return (
+        <div>
+          {renderKPICards()}
+          <Card>
+            <CardContent className="p-0">
+              <div className="border-b border-border p-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Production Planning & Control</h2>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Search orders..." className="pl-9 w-64 h-10" />
+                  </div>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                  <Button size="default" className="h-10">
+                    <Plus className="w-4 h-4 mr-2" />
+                    New Order
+                  </Button>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Order No</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead>Plan Qty</TableHead>
+                    <TableHead>Actual Qty</TableHead>
+                    <TableHead>Target Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {ppicData.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.id}</TableCell>
+                      <TableCell>{item.orderNo}</TableCell>
+                      <TableCell>{item.product}</TableCell>
+                      <TableCell>{item.planQty}</TableCell>
+                      <TableCell>{item.actualQty}</TableCell>
+                      <TableCell>{item.date}</TableCell>
+                      <TableCell>{getStatusBadge(item.status)}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (activeSection === "auditlog") {
+      return (
+        <div>
+          <Card>
+            <CardContent className="p-0">
+              <div className="border-b border-border p-6 flex items-center justify-between">
+                <h2 className="text-lg font-semibold">System Audit Log</h2>
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <Input placeholder="Search logs..." className="pl-9 w-64 h-10" />
+                  </div>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" size="default" className="h-10">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Timestamp</TableHead>
+                    <TableHead>User</TableHead>
+                    <TableHead>Action</TableHead>
+                    <TableHead>Module</TableHead>
+                    <TableHead>Description</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {auditLogData.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.timestamp}</TableCell>
+                      <TableCell>{item.user}</TableCell>
+                      <TableCell>{getActionBadge(item.action)}</TableCell>
+                      <TableCell>{item.module}</TableCell>
+                      <TableCell>{item.description}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
+  return (
+    <div className="flex h-screen bg-background font-['Inter',sans-serif]">
+      {/* Sidebar - 256px (w-64) */}
+      <aside className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+        {/* Logo/Brand */}
+        <div className="h-16 flex items-center px-6 border-b border-sidebar-border">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
+              <Package className="w-5 h-5 text-sidebar-primary-foreground" />
+            </div>
+            <span className="text-sidebar-foreground font-semibold text-lg">MFG System</span>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <div className="space-y-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-colors ${
+                  activeSection === item.id
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
+                }`}
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {/* User Section */}
+        <div className="p-4 border-t border-sidebar-border">
+          <div className="flex items-center gap-3 px-3 py-2">
+            <div className="w-8 h-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+              <User className="w-4 h-4 text-sidebar-accent-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">Admin User</p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">admin@company.com</p>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-sidebar-foreground hover:bg-sidebar-accent">
+              <Settings className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content - Remaining width (1184px) */}
+      <main className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <header className="h-16 border-b border-border bg-card flex items-center justify-between px-8">
+          <div>
+            <h1 className="text-xl font-semibold text-foreground">
+              {navItems.find((item) => item.id === activeSection)?.label}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {activeSection === "intake" && "Manage material intake records and approvals"}
+              {activeSection === "qc" && "Monitor quality control inspections and results"}
+              {activeSection === "ppic" && "Production planning, inventory, and control"}
+              {activeSection === "auditlog" && "View system activity and change history"}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" className="h-10 w-10 p-0 relative">
+              <Bell className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center">
+                3
+              </span>
+            </Button>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-8">{renderContent()}</div>
+        </div>
+      </main>
+    </div>
+  );
 }

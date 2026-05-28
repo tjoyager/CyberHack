@@ -2,7 +2,7 @@ from typing import Optional, List
 from uuid import UUID
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
-from backend.app.models.models import UserRole, LotStatus
+from app.models.models import UserRole, LotStatus
 
 # Token
 class Token(BaseModel):

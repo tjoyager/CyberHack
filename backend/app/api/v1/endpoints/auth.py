@@ -3,11 +3,11 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
-from backend.app.core import security
-from backend.app.core.config import settings
-from backend.app.core.db import get_session
-from backend.app.models.models import User
-from backend.app.schemas.schemas import Token
+from app.core import security
+from app.core.config import settings
+from app.core.db import get_session
+from app.models.models import User
+from app.schemas.schemas import Token
 
 router = APIRouter()
 

@@ -1,11 +1,11 @@
 from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-from backend.app.api.v1 import deps
-from backend.app.core.db import get_session
-from backend.app.core.security import get_password_hash
-from backend.app.models.models import User, UserRole
-from backend.app.schemas.schemas import UserCreate, UserRead
+from app.api.v1 import deps
+from app.core.db import get_session
+from app.core.security import get_password_hash
+from app.models.models import User, UserRole
+from app.schemas.schemas import UserCreate, UserRead
 
 router = APIRouter()
 
