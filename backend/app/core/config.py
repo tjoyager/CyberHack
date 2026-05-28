@@ -19,16 +19,30 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     # Database (PostgreSQL 15+ via asyncpg)
     # ------------------------------------------------------------------
-    POSTGRES_SERVER: str = "localhost"
+    POSTGRES_SERVER: str = "db"
     POSTGRES_PORT: int = 5432
     POSTGRES_USER: str = "postgres"
     POSTGRES_PASSWORD: str = "postgres"
     POSTGRES_DB: str = "sima_arome_db"
     DATABASE_URL: Optional[str] = None
 
+    @property
+    def ASYNC_DATABASE_URI(self) -> str:
+        if self.DATABASE_URL:
+            return self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+        
+        # When running in Docker, POSTGRES_SERVER should be 'db'
+        return (
+            f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+            f"@{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+        )
+
     # ------------------------------------------------------------------
-    # JWT
+    # Argon2 (Security)
     # ------------------------------------------------------------------
+    ARGON2_TIME_COST: int = 3
+    ARGON2_MEMORY_COST: int = 65536
+    ARGON2_PARALLELISM: int = 4
     JWT_SECRET_KEY: str = "CHANGE_ME"  # override in .env
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15

@@ -119,6 +119,9 @@ class User(Base):
     otp_tokens: Mapped[list["OTPToken"]] = relationship(
         back_populates="user", cascade="all, delete-orphan", lazy="selectin"
     )
+    audit_logs: Mapped[list["AuditLog"]] = relationship(
+        back_populates="user", cascade="all, delete-orphan", lazy="selectin"
+    )
     created_lots: Mapped[list["Lot"]] = relationship(
         back_populates="creator", foreign_keys="[Lot.created_by]", lazy="selectin"
     )
@@ -127,9 +130,6 @@ class User(Base):
     )
     delivery_orders: Mapped[list["DeliveryOrder"]] = relationship(
         back_populates="creator", lazy="selectin"
-    )
-    audit_logs: Mapped[list["AuditLog"]] = relationship(
-        back_populates="user", lazy="selectin"
     )
 
     def __repr__(self) -> str:
