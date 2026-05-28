@@ -1,11 +1,11 @@
 from typing import Generator, Optional
+from uuid import UUID
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt, JWTError
 from sqlmodel import Session
 from backend.app.core.config import settings
 from backend.app.core.db import get_session
-from backend.app.core.security import ALGORITHM
 from backend.app.models.models import User, UserRole
 from backend.app.schemas.schemas import TokenPayload
 
@@ -26,7 +26,14 @@ def get_current_user(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Could not validate credentials",
         )
-    user = db.get(User, token_data.sub)
+    try:
+        user_id = UUID(token_data.sub)
+    except (ValueError, AttributeError):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid token payload",
+        )
+    user = db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if not user.is_active:

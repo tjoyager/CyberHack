@@ -11,6 +11,9 @@ from backend.app.schemas.schemas import LotCreate, LotRead, LotUpdateStatus
 router = APIRouter()
 
 def set_db_user(db: Session, user_id: str):
+    # SQLite (used in tests) doesn't support 'SET LOCAL'
+    if db.bind.dialect.name == "sqlite":
+        return
     db.execute(text(f"SET LOCAL app.current_user_id = '{user_id}'"))
 
 @router.get("/", response_model=List[LotRead])
