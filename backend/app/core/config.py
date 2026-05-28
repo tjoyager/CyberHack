@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "CyberHack - Sima Arome ERP Lite"
     API_V1_STR: str = "/api/v1"
     APP_ENV: str = "development"
-    CORS_ORIGINS: str = "http://localhost:3000"
+    BACKEND_CORS_ORIGINS: str | list[str] = "http://localhost:3000,http://localhost:3001"
 
     # ------------------------------------------------------------------
     # Database (PostgreSQL 15+ via asyncpg)
