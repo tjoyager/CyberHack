@@ -2,15 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Package, User, Lock, Loader2 } from "lucide-react";
-import { useAuth, UserRole } from "@/lib/auth-context";
-import { loginRequest, apiRequest } from "@/lib/api";
+import { Package, User, Lock, KeyRound, Loader2 } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { loginRequestOTP, verifyOTPRequest, apiRequest } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
   const { login } = useAuth();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  
+  // Step 1: Login
+  const [username, setUsername] = useState("admin");
+  const [password, setPassword] = useState("admin123");
+  // Step 2: OTP
+  const [otpCode, setOtpCode] = useState("");
+  const [step, setStep] = useState<1 | 2>(1);
+  const [emailHint, setEmailHint] = useState("");
+  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -19,8 +26,24 @@ export default function LoginPage() {
     setError("");
     setIsLoading(true);
     try {
-      const data = await loginRequest(username, password);
-      // Fetch user profile to get role
+      const data = await loginRequestOTP(username, password);
+      if (data.status === "otp_sent") {
+        setEmailHint(data.email);
+        setStep(2);
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to login");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+    try {
+      const data = await verifyOTPRequest(username, otpCode);
       const profile = await apiRequest("/users/me", "GET", undefined, data.access_token);
       
       login(data.access_token, {
@@ -29,26 +52,10 @@ export default function LoginPage() {
       });
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Failed to login");
+      setError(err.message || "Invalid OTP code");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const quickLogin = async (role: string) => {
-    // Note: Quick login bypassing password is not possible against the real backend without a bypass token.
-    // For now, let's pre-fill the username and password field if we have test accounts.
-    // Alternatively, just alert them.
-    let uname = "";
-    let pword = "Password123!";
-    switch (role) {
-      case "intake": uname = "intake_user"; break;
-      case "qc": uname = "qc_user"; break;
-      case "ppic": uname = "ppic_user"; break;
-      case "super_admin": uname = "admin_user"; break;
-    }
-    setUsername(uname);
-    setPassword(pword);
   };
 
   return (
@@ -70,73 +77,87 @@ export default function LoginPage() {
               {error}
             </div>
           )}
-          <form onSubmit={handleLogin}>
-            <div className="mb-4">
-              <label className="block mb-2 text-foreground font-medium">Username</label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Enter your username"
-                />
+          
+          {step === 1 ? (
+            <form onSubmit={handleLogin}>
+              <div className="mb-4">
+                <label className="block mb-2 text-foreground font-medium">Username</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Enter your username"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="mb-6">
-              <label className="block mb-2 text-foreground font-medium">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder="Enter your password"
-                />
+              <div className="mb-6">
+                <label className="block mb-2 text-foreground font-medium">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder="Enter your password"
+                  />
+                </div>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold flex items-center justify-center disabled:opacity-50"
-            >
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Login"}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold flex items-center justify-center disabled:opacity-50"
+              >
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Sign In & Get OTP"}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="animate-in fade-in slide-in-from-right-4 duration-300">
+              <div className="mb-6 text-center">
+                <p className="text-sm text-foreground">
+                  An OTP has been sent to <strong>{emailHint}</strong>. (Check terminal backend logs for the mock email).
+                </p>
+              </div>
 
-          <div className="mt-8 pt-6 border-t border-border">
-            <p className="text-sm text-muted-foreground mb-3 text-center">Quick login as:</p>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => quickLogin("intake")}
-                className="py-2 px-3 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-sm text-foreground font-medium"
-              >
-                Intake Staff
-              </button>
-              <button
-                onClick={() => quickLogin("qc")}
-                className="py-2 px-3 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-sm text-foreground font-medium"
-              >
-                QC Inspector
-              </button>
-              <button
-                onClick={() => quickLogin("ppic")}
-                className="py-2 px-3 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-sm text-foreground font-medium"
-              >
-                PPIC Manager
-              </button>
-              <button
-                onClick={() => quickLogin("super_admin")}
-                className="py-2 px-3 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-sm text-foreground font-medium"
-              >
-                Super Admin
-              </button>
-            </div>
-          </div>
+              <div className="mb-6">
+                <label className="block mb-2 text-foreground font-medium">Enter 6-Digit OTP</label>
+                <div className="relative">
+                  <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring tracking-widest text-center text-lg font-bold"
+                    placeholder="••••••"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="flex-1 py-3 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors font-semibold flex items-center justify-center text-foreground"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || otpCode.length !== 6}
+                  className="flex-[2] py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold flex items-center justify-center disabled:opacity-50"
+                >
+                  {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Login"}
+                </button>
+              </div>
+            </form>
+          )}
+
         </div>
 
         <div className="text-center mt-6">

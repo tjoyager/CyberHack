@@ -23,6 +23,12 @@ class Token(BaseModel):
     username: Optional[str] = None
 
 
+class OTPVerify(BaseModel):
+    username: str
+    otp_code: str
+    purpose: str = "LOGIN"
+
+
 class TokenPayload(BaseModel):
     sub: Optional[str] = None
     role: Optional[str] = None

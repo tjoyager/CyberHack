@@ -28,7 +28,7 @@ export async function apiRequest(
   return response.json();
 }
 
-export async function loginRequest(username: string, password: string) {
+export async function loginRequestOTP(username: string, password: string) {
   const formData = new URLSearchParams();
   formData.append('username', username);
   formData.append('password', password);
@@ -47,6 +47,14 @@ export async function loginRequest(username: string, password: string) {
   }
 
   return response.json();
+}
+
+export async function verifyOTPRequest(username: string, otp_code: string) {
+  return apiRequest('/auth/verify-otp', 'POST', {
+    username,
+    otp_code,
+    purpose: 'LOGIN'
+  });
 }
 
 export async function getLots(token: string) {
