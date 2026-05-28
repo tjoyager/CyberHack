@@ -2,34 +2,53 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Package, User, Lock } from "lucide-react";
+import { Package, User, Lock, Loader2 } from "lucide-react";
+import { useAuth, UserRole } from "@/lib/auth-context";
+import { loginRequest, apiRequest } from "@/lib/api";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Default to super admin if logging in with credentials
-    localStorage.setItem("userRole", "super_admin");
-    localStorage.setItem("userName", username || "Admin User");
-    router.push("/dashboard");
+    setError("");
+    setIsLoading(true);
+    try {
+      const data = await loginRequest(username, password);
+      // Fetch user profile to get role
+      const profile = await apiRequest("/users/me", "GET", undefined, data.access_token);
+      
+      login(data.access_token, {
+        username: profile.username,
+        role: profile.role,
+      });
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to login");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const quickLogin = (role: string) => {
-    localStorage.setItem("userRole", role);
-
-    // Set appropriate user name based on role
-    const roleNames = {
-      intake: "Intake Staff User",
-      qc: "QC Inspector User",
-      ppic: "PPIC Manager User",
-      super_admin: "Super Admin User",
-    };
-
-    localStorage.setItem("userName", roleNames[role as keyof typeof roleNames] || "User");
-    router.push("/dashboard");
+  const quickLogin = async (role: string) => {
+    // Note: Quick login bypassing password is not possible against the real backend without a bypass token.
+    // For now, let's pre-fill the username and password field if we have test accounts.
+    // Alternatively, just alert them.
+    let uname = "";
+    let pword = "Password123!";
+    switch (role) {
+      case "intake": uname = "intake_user"; break;
+      case "qc": uname = "qc_user"; break;
+      case "ppic": uname = "ppic_user"; break;
+      case "super_admin": uname = "admin_user"; break;
+    }
+    setUsername(uname);
+    setPassword(pword);
   };
 
   return (
@@ -46,6 +65,11 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-border shadow-lg p-8">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg text-sm">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleLogin}>
             <div className="mb-4">
               <label className="block mb-2 text-foreground font-medium">Username</label>
@@ -77,9 +101,10 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold"
+              disabled={isLoading}
+              className="w-full py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold flex items-center justify-center disabled:opacity-50"
             >
-              Login
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Login"}
             </button>
           </form>
 

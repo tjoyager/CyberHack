@@ -1,45 +1,71 @@
 'use client';
 
+import { useQuery } from "@tanstack/react-query";
 import { Clock, CheckCircle, Package, XCircle } from "lucide-react";
+import { getLots } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
+import { SkeletonLotTable } from "@/components/ui/skeleton-lot-table";
+import { formatDistanceToNow } from "date-fns";
 
 export default function DashboardOverview() {
+  const { token, user } = useAuth();
+
+  const { data: lots, isLoading, error } = useQuery({
+    queryKey: ["lots"],
+    queryFn: () => getLots(token as string),
+    enabled: !!token,
+    refetchInterval: 30000, // auto refresh every 30s
+  });
+
+  if (isLoading) {
+    return <SkeletonLotTable />;
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 text-red-600 rounded-lg">
+        Error loading dashboard data. Please try again.
+      </div>
+    );
+  }
+
+  const safeLots = lots || [];
+
+  // Calculate summary stats
+  const pendingCount = safeLots.filter((lot: any) => lot.status === "PENDING_QC").length;
+  const approvedCount = safeLots.filter((lot: any) => lot.status === "APPROVED").length;
+  const productionCount = safeLots.filter((lot: any) => lot.status === "IN_PRODUCTION").length;
+  const rejectedCount = safeLots.filter((lot: any) => lot.status === "REJECTED").length;
+
   const summaryCards = [
     {
       title: "Pending QC",
-      value: "24",
+      value: pendingCount.toString(),
       icon: Clock,
       color: "text-amber-600",
       bgColor: "bg-amber-100/50",
     },
     {
       title: "Approved Lots",
-      value: "156",
+      value: approvedCount.toString(),
       icon: CheckCircle,
       color: "text-green-600",
       bgColor: "bg-green-100/50",
     },
     {
       title: "In Production",
-      value: "42",
+      value: productionCount.toString(),
       icon: Package,
       color: "text-primary",
       bgColor: "bg-primary/10",
     },
     {
       title: "Rejected Lots",
-      value: "3",
+      value: rejectedCount.toString(),
       icon: XCircle,
       color: "text-destructive",
       bgColor: "bg-destructive/10",
     },
-  ];
-
-  const recentActivity = [
-    { lot: "LOT-2026-001", material: "Vanilla Extract", status: "PENDING_QC", time: "2 minutes ago" },
-    { lot: "LOT-2026-002", material: "Lavender Oil", status: "APPROVED", time: "15 minutes ago" },
-    { lot: "LOT-2026-003", material: "Rose Essential Oil", status: "IN_PRODUCTION", time: "1 hour ago" },
-    { lot: "LOT-2026-004", material: "Peppermint Oil", status: "APPROVED", time: "2 hours ago" },
-    { lot: "LOT-2026-005", material: "Citrus Blend", status: "PENDING_QC", time: "3 hours ago" },
   ];
 
   const getStatusColor = (status: string) => {
@@ -52,8 +78,18 @@ export default function DashboardOverview() {
     }
   };
 
+  // Sort by created_at descending
+  const recentActivity = [...safeLots].sort((a, b) => 
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  ).slice(0, 10);
+
   return (
     <div className="animate-in fade-in duration-500">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold">Welcome back, {user?.username || 'User'}!</h2>
+        <p className="text-muted-foreground">Here is the latest overview of the warehouse operations.</p>
+      </div>
+      
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {summaryCards.map((card) => {
           const Icon = card.icon;
@@ -86,18 +122,28 @@ export default function DashboardOverview() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {recentActivity.map((item, index) => (
-                <tr key={index} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-semibold text-foreground">{item.lot}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{item.material}</td>
-                  <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(item.status)}`}>
-                      {item.status.replace(/_/g, " ")}
-                    </span>
+              {recentActivity.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">
+                    No lots found in the system.
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground font-medium">{item.time}</td>
                 </tr>
-              ))}
+              ) : (
+                recentActivity.map((item: any) => (
+                  <tr key={item.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-semibold text-foreground">{item.lot_number}</td>
+                    <td className="px-6 py-4 text-sm text-foreground">{item.material_name}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(item.status)}`}>
+                        {item.status.replace(/_/g, " ")}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-muted-foreground font-medium">
+                      {formatDistanceToNow(new Date(item.created_at), { addSuffix: true })}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
