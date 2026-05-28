@@ -27,3 +27,24 @@ export async function apiRequest(
 
   return response.json();
 }
+
+export async function loginRequest(username: string, password: string) {
+  const formData = new URLSearchParams();
+  formData.append('username', username);
+  formData.append('password', password);
+
+  const response = await fetch(`${API_URL}/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData.toString(),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || 'Login failed');
+  }
+
+  return response.json();
+}
