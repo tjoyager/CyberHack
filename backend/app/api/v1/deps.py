@@ -1,11 +1,19 @@
-from typing import Generator, Optional
+"""
+FastAPI dependencies for authentication and role-based access control.
+
+All dependencies are async to work with the async SQLAlchemy session.
+"""
+
 from uuid import UUID
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import jwt, JWTError
-from sqlmodel import Session
+from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.core.config import settings
-from app.core.db import get_session
+from app.core.db import get_db
 from app.models.models import User, UserRole
 from app.schemas.schemas import TokenPayload
 
@@ -13,39 +21,59 @@ oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/auth/login"
 )
 
-def get_current_user(
-    db: Session = Depends(get_session), token: str = Depends(oauth2_scheme)
+
+async def get_current_user(
+    db: AsyncSession = Depends(get_db),
+    token: str = Depends(oauth2_scheme),
 ) -> User:
+    """Decode JWT and return the authenticated User, or raise 401/403."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required.",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token,
+            settings.JWT_SECRET_KEY,
+            algorithms=[settings.JWT_ALGORITHM],
         )
         token_data = TokenPayload(**payload)
     except (JWTError, Exception):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Could not validate credentials",
-        )
+        raise credentials_exception
+
     try:
         user_id = UUID(token_data.sub)
     except (ValueError, AttributeError):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid token payload",
-        )
-    user = db.get(User, user_id)
+        raise credentials_exception
+
+    from app.crud import crud_user
+    user = await crud_user.get_user(db, user_id)
+
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found.")
     if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+        raise HTTPException(status_code=400, detail="Inactive user.")
     return user
 
+
 def check_role(roles: list[UserRole]):
-    def role_checker(current_user: User = Depends(get_current_user)):
-        if current_user.role not in roles and current_user.role != UserRole.SUPER_ADMIN:
+    """Return a dependency that enforces role-based access.
+
+    SUPER_ADMIN always passes.
+    """
+
+    async def role_checker(
+        current_user: User = Depends(get_current_user),
+    ) -> User:
+        if (
+            current_user.role not in roles
+            and current_user.role != UserRole.SUPER_ADMIN
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="The user doesn't have enough privileges",
+                detail=f"Forbidden: requires role {', '.join(r.value for r in roles)}.",
             )
         return current_user
+
     return role_checker

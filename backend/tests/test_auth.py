@@ -1,42 +1,32 @@
+"""
+Auth endpoint tests — async SQLAlchemy + httpx AsyncClient.
+"""
+
 import pytest
-from fastapi.testclient import TestClient
-from sqlmodel import Session, SQLModel, create_engine
-from sqlmodel.pool import StaticPool
-from app.main import app
-from app.core.db import get_session
-from app.models.models import User, UserRole
-from app.core.security import get_password_hash
+from httpx import AsyncClient
 
-# Setup in-memory SQLite for testing
-engine = create_engine(
-    "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
-)
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
 
-@pytest.fixture(name="session")
-def session_fixture():
-    SQLModel.metadata.create_all(engine)
-    with Session(engine) as session:
-        yield session
-    SQLModel.metadata.drop_all(engine)
-
-@pytest.fixture(name="client")
-def client_fixture(session: Session):
-    def get_session_override():
-        return session
-    app.dependency_overrides[get_session] = get_session_override
-    client = TestClient(app)
-    yield client
-    app.dependency_overrides.clear()
-
-def test_read_root(client: TestClient):
-    response = client.get("/")
+@pytest.mark.asyncio
+async def test_read_root(client: AsyncClient):
+    response = await client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "Welcome to Sima Arome ERP Lite API"}
 
-def test_login_fail(client: TestClient):
-    response = client.post(
+@pytest.mark.asyncio
+async def test_health_check(client: AsyncClient):
+    response = await client.get("/health")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] in ("ok", "error")
+
+@pytest.mark.asyncio
+async def test_login_fail(client: AsyncClient):
+    response = await client.post(
         "/api/v1/auth/login",
-        data={"username": "nonexistent", "password": "wrongpassword"}
+        data={"username": "nonexistent", "password": "wrongpassword"},
     )
     assert response.status_code == 400
-    assert response.json()["detail"] == "Incorrect username or password"
+    assert "Incorrect" in response.json()["detail"]

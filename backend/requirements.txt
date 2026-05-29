@@ -1,9 +1,18 @@
 fastapi
-uvicorn[standard]
-sqlmodel
-psycopg2-binary
-python-jose[cryptography]
-passlib[bcrypt]
+uvicorn
+sqlalchemy[asyncio]>=2.0
+asyncpg
+psycopg2
+python-jose
+argon2-cffi
 python-multipart
 pydantic-settings
+pydantic[email]
 alembic
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+aiosqlite
+faker
