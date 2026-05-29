@@ -2,13 +2,12 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Package, LayoutDashboard, Inbox, CheckCircle, Warehouse, FileText, LogOut, Search, Bell, User, Settings, HelpCircle, X, Menu } from "lucide-react";
+import { Package, LayoutDashboard, Inbox, CheckCircle, Warehouse, FileText, LogOut, Search, Bell, User, Settings, HelpCircle, X, Menu, Lock } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   
-  // Need to handle localStorage carefully with Next.js SSR
   const [userRole, setUserRole] = useState("super_admin");
   const [userName, setUserName] = useState("Admin User");
   
@@ -56,14 +55,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const role = localStorage.getItem("userRole") || "super_admin";
-    const name = localStorage.getItem("userName") || "Admin User";
-    setUserRole(role);
-    setUserName(name);
-    setProfileData(prev => ({ ...prev, fullName: name }));
+    if (typeof window !== "undefined") {
+      const role = localStorage.getItem("userRole") || "super_admin";
+      const name = localStorage.getItem("userName") || "Admin User";
+      setUserRole(role);
+      setUserName(name);
+      setProfileData(prev => ({ ...prev, fullName: name }));
+    }
   }, []);
 
-  // Define menu items
   const allMenuItems = [
     { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard, roles: ["intake", "qc", "ppic", "admin", "super_admin"] },
     { path: "/dashboard/intake", label: "Incoming Materials", icon: Inbox, roles: ["intake", "admin", "super_admin"] },
@@ -72,7 +72,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { path: "/dashboard/audit", label: "Audit Logs", icon: FileText, roles: ["admin", "super_admin"] },
   ];
 
-  // Filter menu items based on user role
   const menuItems = allMenuItems.filter(item => item.roles.includes(userRole));
 
   useEffect(() => {
@@ -92,14 +91,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Redirect to appropriate page based on role if accessing unauthorized page
   useEffect(() => {
     const currentPath = pathname;
     const hasAccess = allMenuItems.some(
       item => item.path === currentPath && item.roles.includes(userRole)
     );
 
-    // If user doesn't have access to current page, redirect to first allowed page
     if (!hasAccess && menuItems.length > 0 && currentPath.startsWith("/dashboard")) {
       router.replace(menuItems[0].path);
     }
@@ -167,7 +164,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Mobile Sidebar Overlay */}
       {showMobileSidebar && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -175,7 +171,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-50
         w-64 bg-sidebar border-r border-sidebar-border flex flex-col
@@ -190,7 +185,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <div>
                 <div className="font-semibold text-sidebar-foreground">Sima Arome</div>
-                <div className="text-xs text-muted-foreground font-medium">ERP Lite</div>
+                <div className="text-xs text-muted-foreground">ERP Lite</div>
               </div>
             </div>
             <button
@@ -212,7 +207,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   router.push(item.path);
                   setShowMobileSidebar(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors font-medium text-sm ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
                   isActive(item.path)
                     ? "bg-sidebar-primary text-sidebar-primary-foreground"
                     : "text-sidebar-foreground hover:bg-sidebar-accent"
@@ -232,7 +227,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               localStorage.removeItem("userName");
               router.push("/login");
             }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors font-medium text-sm"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
           >
             <LogOut className="w-5 h-5" />
             <span>Logout</span>
@@ -249,7 +244,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               <Menu className="w-5 h-5 text-foreground" />
             </button>
-            <h1 className="text-lg lg:text-xl text-foreground truncate font-semibold">
+            <h1 className="text-lg lg:text-xl text-foreground truncate">
               {menuItems.find((item) => isActive(item.path))?.label || "Dashboard"}
             </h1>
           </div>
@@ -262,7 +257,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 value={searchQuery}
                 onChange={handleSearchChange}
                 placeholder="Search materials, lots..."
-                className="pl-9 pr-4 py-2 w-48 lg:w-64 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring text-sm"
+                className="pl-9 pr-4 py-2 w-48 lg:w-64 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-ring"
               />
 
               {showSearchResults && searchResults.length > 0 && (
@@ -307,7 +302,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               >
                 <Bell className="w-5 h-5 text-foreground" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-white text-xs rounded-full flex items-center justify-center">
                     {unreadCount}
                   </span>
                 )}
@@ -316,9 +311,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {showNotifications && (
                 <div className="absolute right-0 top-12 w-80 bg-white rounded-xl border border-border shadow-2xl z-50">
                   <div className="p-4 border-b border-border flex items-center justify-between">
-                    <h3 className="font-semibold text-sm text-foreground">Notifications</h3>
+                    <h3 className="font-medium text-foreground">Notifications</h3>
                     {unreadCount > 0 && (
-                      <span className="text-xs text-muted-foreground font-medium">{unreadCount} unread</span>
+                      <span className="text-xs text-muted-foreground">{unreadCount} unread</span>
                     )}
                   </div>
                   <div className="max-h-96 overflow-y-auto">
@@ -331,13 +326,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         }`}
                       >
                         <div className="flex items-start justify-between mb-1">
-                          <h4 className="font-semibold text-sm text-foreground">{notification.title}</h4>
+                          <h4 className="font-medium text-sm text-foreground">{notification.title}</h4>
                           {notification.unread && (
-                            <span className="w-2 h-2 bg-primary rounded-full mt-1.5"></span>
+                            <span className="w-2 h-2 bg-primary rounded-full"></span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground mb-1 leading-relaxed">{notification.message}</p>
-                        <span className="text-[10px] text-muted-foreground font-medium">{notification.time}</span>
+                        <p className="text-sm text-muted-foreground mb-1">{notification.message}</p>
+                        <span className="text-xs text-muted-foreground">{notification.time}</span>
                       </div>
                     ))}
                   </div>
@@ -347,7 +342,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         setShowAllNotificationsModal(true);
                         setShowNotifications(false);
                       }}
-                      className="text-xs text-primary hover:underline font-semibold"
+                      className="text-sm text-primary hover:underline"
                     >
                       View all notifications
                     </button>
@@ -359,7 +354,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20"
+                className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center hover:bg-primary/90 transition-colors"
               >
                 <User className="w-5 h-5 text-white" />
               </button>
@@ -368,12 +363,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <div className="absolute right-0 top-12 w-64 bg-white rounded-xl border border-border shadow-2xl z-50">
                   <div className="p-4 border-b border-border">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <User className="w-5 h-5" />
+                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                        <User className="w-6 h-6 text-white" />
                       </div>
-                      <div className="min-w-0">
-                        <h4 className="font-semibold text-sm text-foreground truncate">{userName}</h4>
-                        <p className="text-xs text-muted-foreground truncate">{profileData.email}</p>
+                      <div>
+                        <h4 className="font-medium text-foreground">{userName}</h4>
+                        <p className="text-sm text-muted-foreground">{profileData.email}</p>
                       </div>
                     </div>
                   </div>
@@ -383,30 +378,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         setShowProfileModal(true);
                         setShowUserMenu(false);
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background transition-colors text-foreground font-medium text-sm"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background transition-colors text-foreground"
                     >
                       <User className="w-4 h-4 text-muted-foreground" />
-                      <span>My Profile</span>
+                      <span className="text-sm">My Profile</span>
                     </button>
                     <button
                       onClick={() => {
                         setShowSettingsModal(true);
                         setShowUserMenu(false);
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background transition-colors text-foreground font-medium text-sm"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background transition-colors text-foreground"
                     >
                       <Settings className="w-4 h-4 text-muted-foreground" />
-                      <span>Settings</span>
+                      <span className="text-sm">Settings</span>
                     </button>
                     <button
                       onClick={() => {
                         setShowHelpModal(true);
                         setShowUserMenu(false);
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background transition-colors text-foreground font-medium text-sm"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-background transition-colors text-foreground"
                     >
                       <HelpCircle className="w-4 h-4 text-muted-foreground" />
-                      <span>Help & Support</span>
+                      <span className="text-sm">Help & Support</span>
                     </button>
                   </div>
                   <div className="p-2 border-t border-border">
@@ -416,10 +411,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                         localStorage.removeItem("userName");
                         router.push("/login");
                       }}
-                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive font-semibold text-sm"
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-destructive/10 transition-colors text-destructive"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>Logout</span>
+                      <span className="text-sm">Logout</span>
                     </button>
                   </div>
                 </div>
@@ -428,70 +423,68 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-6 overflow-auto bg-[#F8FAFC]">
+        <main className="flex-1 p-4 lg:p-6 overflow-auto">
           {children}
         </main>
       </div>
 
-      {/* Modals are kept as is, they are client-side only anyway */}
-      {/* ... Profile Modal ... */}
       {showProfileModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 sm:p-6 z-[100] overflow-y-auto">
-          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg my-auto animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 sm:p-6 z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg my-auto">
             <div className="p-6 border-b border-border flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">My Profile</h2>
+              <h2 className="text-xl text-foreground">My Profile</h2>
               <button
                 onClick={() => setShowProfileModal(false)}
                 className="w-8 h-8 rounded-lg hover:bg-background transition-colors flex items-center justify-center text-muted-foreground"
               >
-                <X className="w-5 h-5" />
+                ✕
               </button>
             </div>
             <div className="p-6">
               <div className="flex items-center gap-4 mb-6">
-                <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                  <User className="w-10 h-10" />
+                <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center">
+                  <User className="w-10 h-10 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">{userName}</h3>
-                  <p className="text-sm text-muted-foreground font-medium">{getRoleDisplayName(userRole)}</p>
+                  <h3 className="text-lg font-medium text-foreground">{userName}</h3>
+                  <p className="text-sm text-muted-foreground">{getRoleDisplayName(userRole)}</p>
                 </div>
               </div>
               <div className="space-y-4">
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Full Name</label>
+                  <label className="block mb-2 text-sm text-muted-foreground">Full Name</label>
                   <input
                     type="text"
                     value={profileData.fullName}
                     onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
-                    className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Email Address</label>
+                  <label className="block mb-2 text-sm text-muted-foreground">Email Address</label>
                   <input
                     type="email"
                     value={profileData.email}
                     onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                    className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Role</label>
+                  <label className="block mb-2 text-sm text-muted-foreground">Role</label>
                   <input
                     type="text"
                     value={getRoleDisplayName(userRole)}
                     disabled
-                    className="w-full px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground cursor-not-allowed text-sm font-medium"
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-muted text-muted-foreground cursor-not-allowed"
                   />
                 </div>
                 <div>
-                  <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Department</label>
+                  <label className="block mb-2 text-sm text-muted-foreground">Department</label>
                   <input
                     type="text"
                     value={profileData.department}
                     onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
-                    className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                    className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
               </div>
@@ -499,13 +492,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="p-6 border-t border-border flex gap-3 justify-end">
               <button
                 onClick={() => setShowProfileModal(false)}
-                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground font-semibold text-sm"
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSaveProfile}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-semibold text-sm"
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
               >
                 Save Changes
               </button>
@@ -514,8 +507,435 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       )}
 
-      {/* ... Other modals similar to above but with minor UI tweaks for font consistency ... */}
-      {/* For brevity, I will omit re-writing every single modal in detail if they are purely UI, but I'll ensure they are present in the final file */}
+      {showSettingsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-2xl">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl text-foreground">Settings</h2>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-background transition-colors flex items-center justify-center text-muted-foreground"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <h3 className="font-medium text-foreground mb-4">Notifications</h3>
+                <div className="space-y-3">
+                  <label className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-background transition-colors cursor-pointer">
+                    <span className="text-foreground">Email notifications</span>
+                    <input
+                      type="checkbox"
+                      checked={settingsData.emailNotifications}
+                      onChange={(e) => setSettingsData({ ...settingsData, emailNotifications: e.target.checked })}
+                      className="w-5 h-5 text-primary rounded"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-background transition-colors cursor-pointer">
+                    <span className="text-foreground">Push notifications</span>
+                    <input
+                      type="checkbox"
+                      checked={settingsData.pushNotifications}
+                      onChange={(e) => setSettingsData({ ...settingsData, pushNotifications: e.target.checked })}
+                      className="w-5 h-5 text-primary rounded"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-background transition-colors cursor-pointer">
+                    <span className="text-foreground">SMS notifications</span>
+                    <input
+                      type="checkbox"
+                      checked={settingsData.smsNotifications}
+                      onChange={(e) => setSettingsData({ ...settingsData, smsNotifications: e.target.checked })}
+                      className="w-5 h-5 text-primary rounded"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-foreground mb-4">Display</h3>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block mb-2 text-sm text-muted-foreground">Language</label>
+                    <select
+                      value={settingsData.language}
+                      onChange={(e) => setSettingsData({ ...settingsData, language: e.target.value })}
+                      className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option>English</option>
+                      <option>Indonesian</option>
+                      <option>Spanish</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block mb-2 text-sm text-muted-foreground">Time Zone</label>
+                    <select
+                      value={settingsData.timezone}
+                      onChange={(e) => setSettingsData({ ...settingsData, timezone: e.target.value })}
+                      className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    >
+                      <option>Asia/Jakarta (GMT+7)</option>
+                      <option>America/New_York (GMT-5)</option>
+                      <option>Europe/London (GMT+0)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-foreground mb-4">Security</h3>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setShowChangePasswordModal(true);
+                      setShowSettingsModal(false);
+                    }}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground text-left"
+                  >
+                    Change Password
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShow2FAModal(true);
+                      setShowSettingsModal(false);
+                    }}
+                    className="w-full px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground text-left"
+                  >
+                    Two-Factor Authentication
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-border flex gap-3 justify-end">
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveSettings}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Save Settings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showHelpModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-2xl">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl text-foreground">Help & Support</h2>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-background transition-colors flex items-center justify-center text-muted-foreground"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div>
+                <h3 className="font-medium text-foreground mb-4">Quick Links</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => alert("Opening User Guide...")}
+                    className="p-4 rounded-lg border border-border hover:bg-background transition-colors text-left"
+                  >
+                    <h4 className="font-medium text-foreground mb-1">User Guide</h4>
+                    <p className="text-sm text-muted-foreground">Learn how to use the system</p>
+                  </button>
+                  <button
+                    onClick={() => alert("Opening Video Tutorials...")}
+                    className="p-4 rounded-lg border border-border hover:bg-background transition-colors text-left"
+                  >
+                    <h4 className="font-medium text-foreground mb-1">Video Tutorials</h4>
+                    <p className="text-sm text-muted-foreground">Watch step-by-step guides</p>
+                  </button>
+                  <button
+                    onClick={() => alert("Opening FAQ...")}
+                    className="p-4 rounded-lg border border-border hover:bg-background transition-colors text-left"
+                  >
+                    <h4 className="font-medium text-foreground mb-1">FAQ</h4>
+                    <p className="text-sm text-muted-foreground">Frequently asked questions</p>
+                  </button>
+                  <button
+                    onClick={() => alert("Opening API Documentation...")}
+                    className="p-4 rounded-lg border border-border hover:bg-background transition-colors text-left"
+                  >
+                    <h4 className="font-medium text-foreground mb-1">API Documentation</h4>
+                    <p className="text-sm text-muted-foreground">For developers</p>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-foreground mb-4">Contact Support</h3>
+                <div className="space-y-3 p-4 rounded-lg bg-background">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <span className="text-xl">📧</span>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Email</div>
+                      <div className="text-foreground">support@simaarome.com</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <span className="text-xl">📞</span>
+                    </div>
+                    <div>
+                      <div className="text-sm text-muted-foreground">Phone</div>
+                      <div className="text-foreground">+62 21 1234 5678</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="font-medium text-foreground mb-4">System Information</h3>
+                <div className="p-4 rounded-lg bg-background space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Version</span>
+                    <span className="text-foreground">1.0.0</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Last Updated</span>
+                    <span className="text-foreground">May 28, 2026</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">License</span>
+                    <span className="text-foreground">Enterprise</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="p-6 border-t border-border flex gap-3 justify-end">
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAllNotificationsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <div>
+                <h2 className="text-xl text-foreground">All Notifications</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {unreadCount} unread notification{unreadCount !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAllNotificationsModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-background transition-colors flex items-center justify-center text-muted-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto">
+              <div className="divide-y divide-border">
+                {notificationsList.map((notification) => {
+                  const getNotificationIcon = (type: string) => {
+                    switch (type) {
+                      case "success": return "✅";
+                      case "warning": return "⚠️";
+                      case "info": return "ℹ️";
+                      default: return "📢";
+                    }
+                  };
+
+                  const getNotificationColor = (type: string) => {
+                    switch (type) {
+                      case "success": return "bg-success/10 text-success";
+                      case "warning": return "bg-warning/10 text-warning";
+                      case "info": return "bg-primary/10 text-primary";
+                      default: return "bg-muted text-muted-foreground";
+                    }
+                  };
+
+                  return (
+                    <div
+                      key={notification.id}
+                      onClick={() => markAsRead(notification.id)}
+                      className={`p-4 hover:bg-background transition-colors cursor-pointer ${
+                        notification.unread ? "bg-secondary/20" : ""
+                      }`}
+                    >
+                      <div className="flex gap-4">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${getNotificationColor(notification.type)}`}>
+                          <span className="text-xl">{getNotificationIcon(notification.type)}</span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-start justify-between mb-1">
+                            <h4 className="font-medium text-foreground">{notification.title}</h4>
+                            {notification.unread && (
+                              <span className="w-2 h-2 bg-primary rounded-full mt-1.5"></span>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-2">{notification.message}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <span>{notification.time}</span>
+                            <span>•</span>
+                            <span>{notification.timestamp}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-border flex gap-3 justify-between">
+              <button
+                onClick={markAllAsRead}
+                disabled={unreadCount === 0}
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Mark all as read
+              </button>
+              <button
+                onClick={() => setShowAllNotificationsModal(false)}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors text-sm"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showChangePasswordModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl text-foreground">Change Password</h2>
+              <button
+                onClick={() => setShowChangePasswordModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-background transition-colors flex items-center justify-center text-muted-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block mb-2 text-sm text-muted-foreground">Current Password</label>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Enter current password"
+                />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm text-muted-foreground">New Password</label>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Enter new password"
+                />
+              </div>
+              <div>
+                <label className="block mb-2 text-sm text-muted-foreground">Confirm New Password</label>
+                <input
+                  type="password"
+                  className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Confirm new password"
+                />
+              </div>
+              <div className="p-3 rounded-lg bg-secondary/20 border border-secondary">
+                <p className="text-xs text-muted-foreground">
+                  Password must be at least 8 characters and include uppercase, lowercase, number, and special character.
+                </p>
+              </div>
+            </div>
+            <div className="p-6 border-t border-border flex gap-3 justify-end">
+              <button
+                onClick={() => setShowChangePasswordModal(false)}
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  alert("Password changed successfully!");
+                  setShowChangePasswordModal(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Change Password
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {show2FAModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-border flex items-center justify-between">
+              <h2 className="text-xl text-foreground">Two-Factor Authentication</h2>
+              <button
+                onClick={() => setShow2FAModal(false)}
+                className="w-8 h-8 rounded-lg hover:bg-background transition-colors flex items-center justify-center text-muted-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="text-center">
+                <div className="w-32 h-32 mx-auto mb-4 bg-background rounded-lg border-2 border-dashed border-border flex items-center justify-center">
+                  <span className="text-4xl">🔐</span>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Scan this QR code with your authenticator app (Google Authenticator, Authy, etc.)
+                </p>
+              </div>
+              <div className="p-3 rounded-lg bg-background border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Manual Entry Code:</p>
+                <p className="font-mono text-sm text-foreground">JBSW Y3DP EHPK 3PXP</p>
+              </div>
+              <div>
+                <label className="block mb-2 text-sm text-muted-foreground">Verification Code</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t border-border flex gap-3 justify-end">
+              <button
+                onClick={() => setShow2FAModal(false)}
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  alert("Two-Factor Authentication enabled successfully!");
+                  setShow2FAModal(false);
+                }}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                Enable 2FA
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

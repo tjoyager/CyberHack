@@ -57,6 +57,7 @@ export default function IntakeStaffPage() {
 
     // Simulate AI processing
     setTimeout(() => {
+      // Mock AI extraction - in a real app, this would call an AI API
       const mockExtractedData = [
         {
           materialName: "Eucalyptus Essential Oil",
@@ -81,6 +82,7 @@ export default function IntakeStaffPage() {
         },
       ];
 
+      // Randomly select one of the mock data sets
       const extractedData = mockExtractedData[Math.floor(Math.random() * mockExtractedData.length)];
 
       setFormData(extractedData);
@@ -118,85 +120,85 @@ export default function IntakeStaffPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "PENDING_QC": return "bg-amber-100 text-amber-700 border-amber-200";
-      case "APPROVED": return "bg-green-100 text-green-700 border-green-200";
-      default: return "bg-slate-100 text-slate-700 border-slate-200";
+      case "PENDING_QC": return "bg-warning/20 text-warning border-warning/30";
+      case "APPROVED": return "bg-success/20 text-success border-success/30";
+      default: return "bg-muted text-muted-foreground";
     }
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white rounded-xl border border-border p-4 sm:p-6 shadow-sm">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="bg-white rounded-xl border border-border p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
-          <h2 className="text-base sm:text-lg font-bold text-foreground">Register New Material</h2>
+          <h2 className="text-base sm:text-lg text-foreground">Register New Material</h2>
           <button
             type="button"
             onClick={() => setShowAIModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-green-600 text-white hover:opacity-90 transition-opacity text-sm sm:text-base font-bold shadow-sm"
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-success text-white hover:opacity-90 transition-opacity text-sm sm:text-base"
           >
             <Sparkles className="w-4 sm:w-5 h-4 sm:h-5" />
             Auto-Fill with AI
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4 sm:mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div>
-              <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Material Name</label>
+              <label className="block mb-2 text-foreground">Material Name</label>
               <input
                 type="text"
                 value={formData.materialName}
                 onChange={(e) => setFormData({ ...formData, materialName: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="e.g., Vanilla Extract"
                 required
               />
             </div>
             <div>
-              <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Supplier</label>
+              <label className="block mb-2 text-foreground">Supplier</label>
               <input
                 type="text"
                 value={formData.supplier}
                 onChange={(e) => setFormData({ ...formData, supplier: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="e.g., Natural Essence Ltd"
                 required
               />
             </div>
             <div>
-              <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Initial Quantity (L)</label>
+              <label className="block mb-2 text-foreground">Initial Quantity (L)</label>
               <input
                 type="number"
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                 placeholder="e.g., 500"
                 required
               />
             </div>
             <div>
-              <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Manufactured Date</label>
+              <label className="block mb-2 text-foreground">Manufactured Date</label>
               <input
                 type="date"
                 value={formData.manufacturedDate}
                 onChange={(e) => setFormData({ ...formData, manufacturedDate: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                 required
               />
             </div>
             <div>
-              <label className="block mb-2 text-xs font-bold text-muted-foreground uppercase tracking-wider">Expiry Date</label>
+              <label className="block mb-2 text-foreground">Expiry Date</label>
               <input
                 type="date"
                 value={formData.expiryDate}
                 onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
-                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring text-sm font-medium"
+                className="w-full px-4 py-2 border border-border rounded-lg bg-input-background focus:outline-none focus:ring-2 focus:ring-ring"
                 required
               />
             </div>
           </div>
           <button
             type="submit"
-            className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors font-bold shadow-sm shadow-primary/20"
+            className="flex items-center gap-2 px-6 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
           >
             <Plus className="w-5 h-5" />
             Submit Lot
@@ -204,35 +206,35 @@ export default function IntakeStaffPage() {
         </form>
       </div>
 
-      <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-border bg-slate-50/50">
-          <h2 className="text-base sm:text-lg font-bold text-foreground">Submitted Lots</h2>
+      <div className="bg-white rounded-xl border border-border">
+        <div className="p-4 sm:p-6 border-b border-border">
+          <h2 className="text-base sm:text-lg text-foreground">Submitted Lots</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[700px]">
-            <thead className="bg-slate-50/50">
+            <thead className="bg-background">
               <tr>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Lot Number</th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Material</th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Supplier</th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Quantity</th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Created At</th>
+                <th className="text-left px-6 py-3 text-sm text-muted-foreground">Lot Number</th>
+                <th className="text-left px-6 py-3 text-sm text-muted-foreground">Material</th>
+                <th className="text-left px-6 py-3 text-sm text-muted-foreground">Supplier</th>
+                <th className="text-left px-6 py-3 text-sm text-muted-foreground">Quantity</th>
+                <th className="text-left px-6 py-3 text-sm text-muted-foreground">Status</th>
+                <th className="text-left px-6 py-3 text-sm text-muted-foreground">Created At</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {lots.map((lot, index) => (
-                <tr key={index} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-bold text-foreground">{lot.lotNumber}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{lot.material}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{lot.supplier}</td>
-                  <td className="px-6 py-4 text-sm text-foreground font-medium">{lot.quantity}</td>
+                <tr key={index} className="border-t border-border">
+                  <td className="px-6 py-4 text-foreground">{lot.lotNumber}</td>
+                  <td className="px-6 py-4 text-foreground">{lot.material}</td>
+                  <td className="px-6 py-4 text-foreground">{lot.supplier}</td>
+                  <td className="px-6 py-4 text-foreground">{lot.quantity}</td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-bold border ${getStatusColor(lot.status)}`}>
+                    <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(lot.status)}`}>
                       {lot.status.replace(/_/g, " ")}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground font-medium">{lot.createdAt}</td>
+                  <td className="px-6 py-4 text-muted-foreground">{lot.createdAt}</td>
                 </tr>
               ))}
             </tbody>
@@ -241,16 +243,16 @@ export default function IntakeStaffPage() {
       </div>
 
       {showAIModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-[100] animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg">
             <div className="p-6 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-green-600 flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-success flex items-center justify-center">
                   <Sparkles className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">Auto-Fill with AI</h2>
-                  <p className="text-sm text-muted-foreground font-medium">Upload a document to extract material information</p>
+                  <h2 className="text-xl text-foreground">Auto-Fill with AI</h2>
+                  <p className="text-sm text-muted-foreground">Upload a document to extract material information</p>
                 </div>
               </div>
               <button
@@ -267,20 +269,20 @@ export default function IntakeStaffPage() {
             <div className="p-6">
               {!uploadedFile ? (
                 <label className="block">
-                  <div className="border-2 border-dashed border-border rounded-xl p-8 hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer group">
+                  <div className="border-2 border-dashed border-border rounded-xl p-8 hover:border-primary transition-colors cursor-pointer">
                     <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
                         <Upload className="w-8 h-8 text-primary" />
                       </div>
                       <div className="text-center">
-                        <p className="font-bold text-foreground mb-1">Upload Document</p>
-                        <p className="text-xs text-muted-foreground font-medium">
+                        <p className="font-medium text-foreground mb-1">Upload Document</p>
+                        <p className="text-sm text-muted-foreground">
                           PDF, DOC, DOCX, or image files (Max 10MB)
                         </p>
                       </div>
                       <button
                         type="button"
-                        className="mt-2 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary/90 transition-colors text-sm font-bold shadow-sm"
+                        className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
                         Browse Files
                       </button>
@@ -294,15 +296,15 @@ export default function IntakeStaffPage() {
                   />
                 </label>
               ) : (
-                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                  <div className="p-4 rounded-lg border border-border bg-slate-50 mb-4">
+                <div>
+                  <div className="p-4 rounded-lg border border-border bg-background mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
-                        <FileText className="w-6 h-6" />
+                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <FileText className="w-6 h-6 text-primary" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-sm text-foreground truncate">{uploadedFile.name}</p>
-                        <p className="text-xs text-muted-foreground font-medium">
+                      <div className="flex-1">
+                        <p className="font-medium text-foreground">{uploadedFile.name}</p>
+                        <p className="text-sm text-muted-foreground">
                           {(uploadedFile.size / 1024).toFixed(2)} KB
                         </p>
                       </div>
@@ -315,18 +317,17 @@ export default function IntakeStaffPage() {
                     </div>
                   </div>
 
-                  <div className="p-4 rounded-lg bg-blue-50 border border-blue-100 mb-4">
-                    <p className="text-xs text-blue-800 font-medium leading-relaxed">
-                      <strong className="block mb-1 text-blue-900 uppercase tracking-wider text-[10px]">AI will extract:</strong> 
-                      Material name, supplier, quantity, manufactured date, and expiry date from your document.
+                  <div className="p-4 rounded-lg bg-secondary/20 border border-secondary mb-4">
+                    <p className="text-sm text-foreground">
+                      <strong>AI will extract:</strong> Material name, supplier, quantity, manufactured date, and expiry date from your document.
                     </p>
                   </div>
 
                   {isProcessing && (
-                    <div className="p-4 rounded-lg bg-primary/5 border border-primary/10 mb-4 animate-pulse">
+                    <div className="p-4 rounded-lg bg-primary/10 mb-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm text-primary font-bold">Processing document with AI...</p>
+                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                        <p className="text-sm text-primary font-medium">Processing document with AI...</p>
                       </div>
                     </div>
                   )}
@@ -340,7 +341,7 @@ export default function IntakeStaffPage() {
                   setShowAIModal(false);
                   setUploadedFile(null);
                 }}
-                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground font-semibold text-sm"
+                className="px-4 py-2 rounded-lg border border-border bg-background hover:bg-secondary/50 transition-colors text-foreground"
                 disabled={isProcessing}
               >
                 Cancel
@@ -348,7 +349,7 @@ export default function IntakeStaffPage() {
               <button
                 onClick={handleAIExtract}
                 disabled={!uploadedFile || isProcessing}
-                className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-r from-primary to-green-600 text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-bold text-sm shadow-md"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-success text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Sparkles className="w-4 h-4" />
                 {isProcessing ? "Processing..." : "Extract with AI"}

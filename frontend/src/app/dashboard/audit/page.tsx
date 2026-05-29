@@ -89,58 +89,52 @@ export default function SuperAdminPage() {
   const getActionColor = (action: string) => {
     switch (action) {
       case "INSERT": return "text-primary";
-      case "STATUS_UPDATE": return "text-amber-600";
-      case "WAREHOUSE_ASSIGNMENT": return "text-green-600";
+      case "STATUS_UPDATE": return "text-warning";
+      case "WAREHOUSE_ASSIGNMENT": return "text-success";
       default: return "text-foreground";
     }
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-4 sm:mb-6 bg-white rounded-xl border border-border p-4 sm:p-6 shadow-sm">
+    <div>
+      <div className="mb-6 bg-white rounded-xl border border-border p-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 sm:w-12 h-10 sm:h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-            <FileText className="w-5 sm:w-6 h-5 sm:h-6 text-primary" />
+          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+            <FileText className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-base sm:text-lg font-bold text-foreground">Audit Trail</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
-              Complete history of all system activities and changes
-            </p>
+            <h2 className="text-lg text-foreground">Audit Trail</h2>
+            <p className="text-sm text-muted-foreground">Complete history of system activities</p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
+      <div className="bg-white rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
-            <thead className="bg-slate-50/50">
+            <thead className="bg-background">
               <tr>
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Timestamp</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">User</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Entity</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Action</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Old Value</th>
-                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">New Value</th>
+                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Timestamp</th>
+                <th className="text-left px-6 py-4 text-sm text-muted-foreground">User</th>
+                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Entity</th>
+                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Action</th>
+                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Old Value</th>
+                <th className="text-left px-6 py-4 text-sm text-muted-foreground">New Value</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {auditLogs.map((log, index) => (
-                <tr key={index} className="hover:bg-slate-50 transition-colors">
-                  <td className="px-6 py-4 text-sm font-medium text-foreground">{log.timestamp}</td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-1 rounded bg-slate-100 text-slate-900 text-xs font-bold">
-                      {log.user}
-                    </span>
-                  </td>
+                <tr key={index} className="border-t border-border">
+                  <td className="px-6 py-4 text-sm text-foreground">{log.timestamp}</td>
+                  <td className="px-6 py-4 text-sm text-foreground">{log.user}</td>
                   <td className="px-6 py-4 text-sm text-foreground">{log.entity}</td>
                   <td className="px-6 py-4">
-                    <span className={`text-xs font-bold ${getActionColor(log.action)}`}>
+                    <span className={`text-xs font-medium ${getActionColor(log.action)}`}>
                       {log.action}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground font-medium">{log.oldValue}</td>
-                  <td className="px-6 py-4 text-sm text-foreground font-bold">{log.newValue}</td>
+                  <td className="px-6 py-4 text-sm text-muted-foreground">{log.oldValue}</td>
+                  <td className="px-6 py-4 text-sm text-foreground font-medium">{log.newValue}</td>
                 </tr>
               ))}
             </tbody>
