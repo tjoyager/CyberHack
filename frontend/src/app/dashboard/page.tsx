@@ -203,7 +203,7 @@ export default function DashboardOverview() {
           <h2 className="text-base sm:text-lg font-bold text-foreground">Recent Activity</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px]">
+          <table className="w-full min-w-150">
             <thead className="bg-slate-50">
               <tr>
                 <th className="text-left px-6 py-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">Lot Number</th>
