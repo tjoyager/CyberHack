@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.models.models import LotStatus, OTPChannel, UserRole
 
@@ -29,6 +29,12 @@ class OTPVerify(BaseModel):
     purpose: str = "LOGIN"
 
 
+class OTPResend(BaseModel):
+    username: str
+    channel: Optional[OTPChannel] = OTPChannel.EMAIL
+    website: Optional[str] = None
+
+
 class TokenPayload(BaseModel):
     sub: Optional[str] = None
     role: Optional[str] = None
@@ -47,8 +53,24 @@ class UserBase(BaseModel):
     is_active: bool = True
 
 
+import re
+
 class UserCreate(UserBase):
     password: str
+    website: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, v: str) -> str:
+        if len(v) < 8:
+            raise ValueError("Password must be at least 8 characters long")
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least 1 uppercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least 1 digit")
+        if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", v):
+            raise ValueError("Password must contain at least 1 special character")
+        return v
 
 
 class UserRead(BaseModel):
