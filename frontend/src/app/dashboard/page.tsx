@@ -60,9 +60,9 @@ export default function DashboardOverview() {
 
       try {
         const [statusData, rejectionData, whData, lotsData] = await Promise.all([
-          apiRequest("/analytics/lot-status-summary", "GET", undefined, token),
-          apiRequest("/analytics/qc-rejection-rate", "GET", undefined, token),
-          apiRequest("/analytics/warehouse-utilization", "GET", undefined, token),
+          apiRequest("/analytics/lot-status-summary/", "GET", undefined, token),
+          apiRequest("/analytics/qc-rejection-rate/", "GET", undefined, token),
+          apiRequest("/analytics/warehouse-utilization/", "GET", undefined, token),
           apiRequest("/lots/?limit=5", "GET", undefined, token),
         ]);
 

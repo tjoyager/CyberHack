@@ -56,7 +56,7 @@ export default function QCInspectorPage() {
     try {
       if (!token) throw new Error("Not authenticated");
 
-      await apiRequest(`/lots/${inspectionModal.lot.id}/qc`, "PATCH", {
+      await apiRequest(`/lots/${inspectionModal.lot.id}/qc/`, "PATCH", {
         status,
         qc_notes: inspectionData.qc_notes,
         rejection_reason: status === 'REJECTED' ? inspectionData.rejection_reason : undefined,

@@ -57,7 +57,7 @@ async def get_current_user(
         
     # Explicitly set the PostgreSQL session variable for Audit triggers
     from sqlalchemy import text
-    await db.execute(text("SET LOCAL app.current_user_id = :user_id"), {"user_id": str(user.id)})
+    await db.execute(text("SELECT set_config('app.current_user_id', :user_id, true)"), {"user_id": str(user.id)})
     
     return user
 

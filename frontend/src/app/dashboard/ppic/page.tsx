@@ -61,7 +61,7 @@ export default function PPICManagerPage() {
     try {
       if (!token) throw new Error("Not authenticated");
 
-      await apiRequest(`/lots/${assignmentModal.lot.id}/warehouse`, "PATCH", {
+      await apiRequest(`/lots/${assignmentModal.lot.id}/warehouse/`, "PATCH", {
         warehouse_slot: assignmentData.warehouseSlot,
       }, token);
 

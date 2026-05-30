@@ -50,7 +50,7 @@ export async function loginRequestOTP(username: string, password: string) {
 }
 
 export async function verifyOTPRequest(username: string, otp_code: string) {
-  return apiRequest('/auth/verify-otp', 'POST', {
+  return apiRequest('/auth/verify-otp/', 'POST', {
     username,
     otp_code,
     purpose: 'LOGIN'
@@ -66,9 +66,9 @@ export async function createLot(data: any, token: string) {
 }
 
 export async function updateLotQC(lotId: string, data: any, token: string) {
-  return apiRequest(`/lots/${lotId}/qc`, 'PATCH', data, token);
+  return apiRequest(`/lots/${lotId}/qc/`, 'PATCH', data, token);
 }
 
 export async function updateLotWarehouse(lotId: string, data: any, token: string) {
-  return apiRequest(`/lots/${lotId}/warehouse`, 'PATCH', data, token);
+  return apiRequest(`/lots/${lotId}/warehouse/`, 'PATCH', data, token);
 }
