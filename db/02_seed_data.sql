@@ -1,42 +1,22 @@
 -- 02_seed_data.sql
--- Seed data for Sima Arome ERP Lite (Flavor & Fragrance Industry)
+-- Seed data for Sima Arome ERP Lite
+-- Password for all users: CyberHack2026!
 
 -- 1. Initial Suppliers
-INSERT INTO suppliers (name, contact_email) VALUES
-('Global Aromatics Ltd.', 'sales@global-aromatics.com'),
-('Essence Prime Co.', 'orders@essenceprime.io'),
-('Nature Extracts S.A.', 'contact@nature-extracts.fr'),
-('Synthetic Scents Inc.', 'support@syntheticscents.com'),
-('Pure Oils Distillation', 'logistics@pureoils.com');
+INSERT INTO suppliers (id, company_name, contact_person, phone, email, address) VALUES
+('550e8400-e29b-41d4-a716-446655440001', 'Global Aromatics Ltd.', 'John Fragrance', '+628123456789', 'sales@global-aromatics.com', 'Jakarta Industrial Estate'),
+('550e8400-e29b-41d4-a716-446655440002', 'Essence Prime Co.', 'Alice Scent', '+628987654321', 'orders@essenceprime.io', 'Bandung Science Park');
 
--- 2. Initial Materials (Flavor & Fragrance Ingredients)
-INSERT INTO materials (sku, name, uom, storage_condition) VALUES
-('MAT-001', 'Vanillin Crystal (99% Pure)', 'KG', 'Standard Dry (25°C)'),
-('MAT-002', 'Limonene D-Limonene Food Grade', 'KG', 'Cool Storage (15°C)'),
-('MAT-003', 'Menthol Arvensis Crystals', 'KG', 'Cool and Dry'),
-('MAT-004', 'Linalool (Synthetic)', 'KG', 'Standard Dry'),
-('MAT-005', 'Citral (High Purity)', 'KG', 'Cool Storage (10°C)'),
-('MAT-006', 'Bergamot Essential Oil', 'KG', 'Cold-chain (5°C)'),
-('MAT-007', 'Sandalwood Oil (Mysore Grade)', 'KG', 'Standard Dry'),
-('MAT-008', 'Ethyl Maltol (Cotton Candy Note)', 'KG', 'Standard Dry'),
-('MAT-009', 'Iso E Super', 'KG', 'Standard Dry'),
-('MAT-010', 'Hedione (High Cis)', 'KG', 'Standard Dry'),
-('MAT-011', 'Galaxolide (50% in IPM)', 'KG', 'Standard Dry'),
-('MAT-012', 'Patchouli Oil (Iron-free)', 'KG', 'Cool Storage'),
-('MAT-013', 'Lavender Oil (Bulgarian)', 'KG', 'Cold-chain (5°C)'),
-('MAT-014', 'Cinnamic Aldehyde', 'KG', 'Standard Dry'),
-('MAT-015', 'Cis-3-Hexenyl Acetate (Green Note)', 'KG', 'Cold-chain (-20°C)'),
-('MAT-016', 'Benzaldehyde', 'KG', 'Cool Storage'),
-('MAT-017', 'Coumarin Powder', 'KG', 'Standard Dry'),
-('MAT-018', 'Alpha-Isomethyl Ionone', 'KG', 'Standard Dry'),
-('MAT-019', 'Geraniol (Fine Grade)', 'KG', 'Cool Storage'),
-('MAT-020', 'Peppermint Oil (Piperita)', 'KG', 'Cold-chain (5°C)');
+-- 2. Initial Materials
+INSERT INTO materials (id, name, supplier_name, storage_condition, unit, min_stock_kg) VALUES
+('550e8400-e29b-41d4-a716-446655440011', 'Vanilla Extract', 'Global Aromatics Ltd.', 'Cool Dry Place', 'kg', 50.00),
+('550e8400-e29b-41d4-a716-446655440012', 'Lavender Oil', 'Essence Prime Co.', 'Chilled 5C', 'kg', 25.00),
+('550e8400-e29b-41d4-a716-446655440013', 'Rose Essential Oil', 'Global Aromatics Ltd.', 'Dark Room', 'kg', 10.00);
 
--- 3. Initial Admin User (Password is 'admin123' - Hashed)
--- Password hashed using bcrypt: $2b$12$6K2fB/8T5Nq1TjB8yO5pOu0P0Fp6O.7h9x/k8S.q/p.u.K.q.u.K.
--- Note: Replace with actual hash from security.py if needed.
-INSERT INTO users (username, password_hash, role) VALUES
-('admin', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGGa31S.', 'SUPER_ADMIN'),
-('intake_user', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGGa31S.', 'INTAKE_STAFF'),
-('qc_user', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGGa31S.', 'QC_INSPECTOR'),
-('ppic_user', '$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGGa31S.', 'PPIC_MANAGER');
+-- 3. Initial Users
+-- Hash for 'CyberHack2026!'
+INSERT INTO users (id, username, email, password_hash, role, is_verified) VALUES
+('550e8400-e29b-41d4-a716-446655440101', 'intake_user', 'intake@simaarome.com', '$argon2id$v=19$m=65536,t=3,p=4$TaksQ2aEendDMjT2k3M1CA$4Acjc2hTQ9aauyeQWUN/vpGpOjQNDg7yXlemrkU398o', 'INTAKE_STAFF', TRUE),
+('550e8400-e29b-41d4-a716-446655440102', 'qc_user', 'qc@simaarome.com', '$argon2id$v=19$m=65536,t=3,p=4$TaksQ2aEendDMjT2k3M1CA$4Acjc2hTQ9aauyeQWUN/vpGpOjQNDg7yXlemrkU398o', 'QC_INSPECTOR', TRUE),
+('550e8400-e29b-41d4-a716-446655440103', 'ppic_user', 'ppic@simaarome.com', '$argon2id$v=19$m=65536,t=3,p=4$TaksQ2aEendDMjT2k3M1CA$4Acjc2hTQ9aauyeQWUN/vpGpOjQNDg7yXlemrkU398o', 'PPIC_MANAGER', TRUE),
+('550e8400-e29b-41d4-a716-446655440104', 'admin', 'admin@simaarome.com', '$argon2id$v=19$m=65536,t=3,p=4$TaksQ2aEendDMjT2k3M1CA$4Acjc2hTQ9aauyeQWUN/vpGpOjQNDg7yXlemrkU398o', 'SUPER_ADMIN', TRUE);

@@ -12,7 +12,7 @@ export default function LoginPage() {
   
   // Step 1: Login
   const [username, setUsername] = useState("admin");
-  const [password, setPassword] = useState("admin123");
+  const [password, setPassword] = useState("CyberHack2026!");
   // Step 2: OTP
   const [otpCode, setOtpCode] = useState("");
   const [step, setStep] = useState<1 | 2>(1);

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Package, LayoutDashboard, Inbox, CheckCircle, Warehouse, FileText, LogOut, Search, Bell, User, Settings, HelpCircle, X, Menu, Lock } from "lucide-react";
+import { Package, LayoutDashboard, Inbox, CheckCircle, Warehouse, FileText, LogOut, Search, Bell, User, Settings, HelpCircle, X, Menu, Lock, Truck, Building2 } from "lucide-react";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -69,6 +69,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { path: "/dashboard/intake", label: "Incoming Materials", icon: Inbox, roles: ["intake", "admin", "super_admin"] },
     { path: "/dashboard/qc", label: "Quality Control", icon: CheckCircle, roles: ["qc", "admin", "super_admin"] },
     { path: "/dashboard/ppic", label: "Warehouse Routing", icon: Warehouse, roles: ["ppic", "admin", "super_admin"] },
+    { path: "/dashboard/delivery", label: "Delivery Queue", icon: Truck, roles: ["delivery", "admin", "super_admin"] },
+    { path: "/dashboard/suppliers", label: "Suppliers", icon: Building2, roles: ["admin", "super_admin"] },
     { path: "/dashboard/audit", label: "Audit Logs", icon: FileText, roles: ["admin", "super_admin"] },
   ];
 

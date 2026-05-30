@@ -183,6 +183,9 @@ class Material(Base):
     supplier_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     storage_condition: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     unit: Mapped[Optional[str]] = mapped_column(String(30), nullable=True)
+    min_stock_kg: Mapped[Decimal] = mapped_column(
+        Numeric(10, 2), nullable=False, server_default=text("0.00")
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=_tz_now
     )

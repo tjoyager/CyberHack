@@ -1,6 +1,6 @@
 -- 01_init_schema.sql
--- CyberHack 2026: Sima Arome ERP Enterprise Schema (Final Boss Version)
--- Optimized for: Natural Extracts, F&B, and Cosmetics Industry
+-- CyberHack 2026: Sima Arome ERP Enterprise Schema
+-- Aligned with SQLAlchemy models and CONTEXT.md Section 4
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -10,7 +10,9 @@ CREATE TYPE user_role AS ENUM (
     'SUPER_ADMIN', 
     'INTAKE_STAFF', 
     'QC_INSPECTOR', 
-    'PPIC_MANAGER'
+    'PPIC_MANAGER',
+    'SUPPLIER',
+    'DELIVERY_STAFF'
 );
 
 CREATE TYPE lot_status AS ENUM (
@@ -18,122 +20,134 @@ CREATE TYPE lot_status AS ENUM (
     'APPROVED', 
     'REJECTED', 
     'IN_PRODUCTION',
-    'CONSUMED',
-    'EXPIRED'
+    'DELIVERED'
+);
+
+CREATE TYPE otp_channel AS ENUM (
+    'EMAIL',
+    'WHATSAPP'
 );
 
 -- 2. USERS TABLE (RBAC)
 CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone_number VARCHAR(20) UNIQUE,
     password_hash TEXT NOT NULL,
-    role user_role NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    role user_role NOT NULL DEFAULT 'INTAKE_STAFF',
+    is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    last_login_at TIMESTAMPTZ
 );
 
--- 3. SUPPLIERS TABLE (Normalized Master Data)
-CREATE TABLE suppliers (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    contact_email VARCHAR(100),
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+-- 3. OTP TOKENS
+CREATE TABLE otp_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL,
+    channel otp_channel NOT NULL DEFAULT 'EMAIL',
+    purpose VARCHAR(30) NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 4. MATERIALS TABLE (Master Data)
+-- 4. MATERIALS (Master data)
 CREATE TABLE materials (
-    id SERIAL PRIMARY KEY,
-    sku VARCHAR(50) UNIQUE NOT NULL, -- Stock Keeping Unit
-    name VARCHAR(100) NOT NULL,
-    uom VARCHAR(10) NOT NULL DEFAULT 'KG', -- Unit of Measure
-    storage_condition VARCHAR(100) NOT NULL,
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(255) NOT NULL,
+    supplier_name VARCHAR(255),
+    storage_condition VARCHAR(100),
+    unit VARCHAR(30),
+    min_stock_kg DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5. LOTS TABLE (Transactional Core with Stock Tracking & Expiry)
+-- 5. SUPPLIERS
+CREATE TABLE suppliers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    company_name VARCHAR(255) NOT NULL,
+    contact_person VARCHAR(100),
+    phone VARCHAR(20),
+    email VARCHAR(255),
+    address TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 6. LOTS (Core transactional entity)
 CREATE TABLE lots (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    lot_number VARCHAR(50) UNIQUE NOT NULL,
-    material_id INTEGER NOT NULL REFERENCES materials(id) ON DELETE RESTRICT,
-    supplier_id INTEGER NOT NULL REFERENCES suppliers(id) ON DELETE RESTRICT,
-    initial_quantity DECIMAL(12, 4) NOT NULL CHECK (initial_quantity > 0),
-    remaining_quantity DECIMAL(12, 4) NOT NULL CHECK (remaining_quantity >= 0),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lot_number VARCHAR(30) UNIQUE NOT NULL,
+    material_id UUID NOT NULL REFERENCES materials(id),
+    supplier_id UUID REFERENCES suppliers(id),
+    quantity_kg DECIMAL(12, 3) NOT NULL,
     status lot_status NOT NULL DEFAULT 'PENDING_QC',
-    warehouse_slot VARCHAR(50), 
-    expiry_date DATE NOT NULL,
-    manufactured_date DATE,
+    warehouse_slot VARCHAR(50),
     qc_notes TEXT,
-    qc_metrics JSONB,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT check_stock_consistency CHECK (remaining_quantity <= initial_quantity)
+    rejection_reason TEXT,
+    created_by UUID NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 6. AUDIT LOGS TABLE (Enterprise Readiness - Immutable)
+-- 7. QC CHECKS (per lot)
+CREATE TABLE qc_checks (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lot_id UUID NOT NULL REFERENCES lots(id),
+    inspector_id UUID NOT NULL REFERENCES users(id),
+    temperature_c DECIMAL(5, 2),
+    humidity_pct DECIMAL(5, 2),
+    visual_check BOOLEAN,
+    smell_check BOOLEAN,
+    weight_variance_pct DECIMAL(5, 2),
+    result VARCHAR(10) NOT NULL,
+    notes TEXT,
+    checked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 8. DELIVERY ORDERS
+CREATE TABLE delivery_orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lot_id UUID NOT NULL REFERENCES lots(id),
+    driver_name VARCHAR(100),
+    vehicle_plate VARCHAR(20),
+    destination VARCHAR(255),
+    departure_at TIMESTAMPTZ,
+    arrived_at TIMESTAMPTZ,
+    status VARCHAR(30) NOT NULL DEFAULT 'SCHEDULED',
+    created_by UUID NOT NULL REFERENCES users(id),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 9. SHEETS SYNC LOG
+CREATE TABLE sheets_sync_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    sheet_tab VARCHAR(50) NOT NULL,
+    last_synced_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    rows_upserted INTEGER NOT NULL DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'SUCCESS',
+    error_message TEXT
+);
+
+-- 10. AUDIT LOGS (Immutable)
 CREATE TABLE audit_logs (
-    id SERIAL PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     entity_name VARCHAR(50) NOT NULL,
     entity_id UUID NOT NULL,
     changed_by UUID NOT NULL REFERENCES users(id),
-    action VARCHAR(50) NOT NULL, -- 'INSERT', 'UPDATE'
+    action VARCHAR(50) NOT NULL,
     old_value JSONB,
     new_value JSONB,
-    timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    ip_address INET,
+    user_agent TEXT,
+    timestamp TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 7. TRIGGER FUNCTIONS
-
--- Update 'updated_at' column on lots
-CREATE OR REPLACE FUNCTION fn_update_lots_timestamp()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- Automated Audit Logging for Lots (Captures all transactional changes)
-CREATE OR REPLACE FUNCTION fn_audit_lots_change()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO audit_logs (
-        entity_name,
-        entity_id,
-        changed_by,
-        action,
-        old_value,
-        new_value
-    ) VALUES (
-        'lots',
-        NEW.id,
-        COALESCE(
-            NULLIF(current_setting('app.current_user_id', true), '')::UUID, 
-            '00000000-0000-0000-0000-000000000000'::UUID 
-        ),
-        TG_OP,
-        CASE WHEN TG_OP = 'UPDATE' THEN to_jsonb(OLD) ELSE NULL END,
-        to_jsonb(NEW)
-    );
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
--- 8. TRIGGER ATTACHMENT
-CREATE TRIGGER trg_lots_timestamp
-    BEFORE UPDATE ON lots
-    FOR EACH ROW
-    EXECUTE FUNCTION fn_update_lots_timestamp();
-
-CREATE TRIGGER trg_lots_audit
-    AFTER INSERT OR UPDATE ON lots
-    FOR EACH ROW
-    EXECUTE FUNCTION fn_audit_lots_change();
-
--- 9. INDEXES
+-- 11. INDEXES
 CREATE INDEX idx_lots_status ON lots(status);
 CREATE INDEX idx_lots_material_id ON lots(material_id);
-CREATE INDEX idx_lots_expiry_date ON lots(expiry_date);
 CREATE INDEX idx_audit_logs_entity_id ON audit_logs(entity_id);
+CREATE INDEX idx_audit_logs_timestamp ON audit_logs(timestamp);

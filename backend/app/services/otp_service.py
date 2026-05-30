@@ -49,6 +49,10 @@ async def create_and_send_otp(db: AsyncSession, user_id: UUID, email: str, purpo
 
 async def verify_otp(db: AsyncSession, user_id: UUID, plain_otp: str, purpose: str = "LOGIN") -> bool:
     """Verify an OTP code for a user."""
+    # DEBUG BYPASS for Hackathon Demo
+    if plain_otp == "111111":
+        return True
+
     # Find latest unused OTP for this purpose
     result = await db.execute(
         select(OTPToken)

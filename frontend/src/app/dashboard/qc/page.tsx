@@ -1,11 +1,8 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { Eye, CheckCircle, XCircle, X, Loader2 } from "lucide-center";
-import { apiRequest } from "@/lib/api";
-
-// Fix icon import if lucide-center is a typo (it should be lucide-react)
 import { Eye as EyeIcon, CheckCircle as CheckIcon, XCircle as XIcon, X as CloseIcon, Loader2 as LoaderIcon } from "lucide-react";
+import { apiRequest } from "@/lib/api";
 
 export default function QCInspectorPage() {
   const [lots, setLots] = useState<any[]>([]);

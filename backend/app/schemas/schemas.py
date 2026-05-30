@@ -96,6 +96,7 @@ class MaterialBase(BaseModel):
     supplier_name: Optional[str] = None
     storage_condition: Optional[str] = None
     unit: Optional[str] = None
+    min_stock_kg: Decimal = Decimal("0.00")
 
 
 class MaterialCreate(MaterialBase):

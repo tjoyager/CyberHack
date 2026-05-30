@@ -1,142 +1,120 @@
 'use client';
 
-import { FileText } from "lucide-react";
+import { useState, useEffect } from "react";
+import { FileText, Loader2 } from "lucide-react";
+import { apiRequest } from "@/lib/api";
 
 export default function SuperAdminPage() {
-  const auditLogs = [
-    {
-      timestamp: "2026-05-28 10:00",
-      user: "intake_user",
-      entity: "lots",
-      action: "INSERT",
-      oldValue: "-",
-      newValue: "PENDING_QC",
-    },
-    {
-      timestamp: "2026-05-28 11:30",
-      user: "qc_user",
-      entity: "lots",
-      action: "STATUS_UPDATE",
-      oldValue: "PENDING_QC",
-      newValue: "APPROVED",
-    },
-    {
-      timestamp: "2026-05-28 14:00",
-      user: "ppic_user",
-      entity: "lots",
-      action: "STATUS_UPDATE",
-      oldValue: "APPROVED",
-      newValue: "IN_PRODUCTION",
-    },
-    {
-      timestamp: "2026-05-28 09:45",
-      user: "intake_user",
-      entity: "lots",
-      action: "INSERT",
-      oldValue: "-",
-      newValue: "PENDING_QC",
-    },
-    {
-      timestamp: "2026-05-28 12:15",
-      user: "qc_user",
-      entity: "lots",
-      action: "STATUS_UPDATE",
-      oldValue: "PENDING_QC",
-      newValue: "REJECTED",
-    },
-    {
-      timestamp: "2026-05-28 08:30",
-      user: "intake_user",
-      entity: "lots",
-      action: "INSERT",
-      oldValue: "-",
-      newValue: "PENDING_QC",
-    },
-    {
-      timestamp: "2026-05-28 10:45",
-      user: "qc_user",
-      entity: "lots",
-      action: "STATUS_UPDATE",
-      oldValue: "PENDING_QC",
-      newValue: "APPROVED",
-    },
-    {
-      timestamp: "2026-05-28 15:20",
-      user: "ppic_user",
-      entity: "lots",
-      action: "WAREHOUSE_ASSIGNMENT",
-      oldValue: "-",
-      newValue: "A-12",
-    },
-    {
-      timestamp: "2026-05-28 16:00",
-      user: "ppic_user",
-      entity: "lots",
-      action: "STATUS_UPDATE",
-      oldValue: "APPROVED",
-      newValue: "IN_PRODUCTION",
-    },
-    {
-      timestamp: "2026-05-28 13:10",
-      user: "qc_user",
-      entity: "lots",
-      action: "STATUS_UPDATE",
-      oldValue: "PENDING_QC",
-      newValue: "APPROVED",
-    },
-  ];
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAuditLogs = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("accessToken");
+        if (!token) return;
+
+        const data = await apiRequest("/audit-logs", "GET", undefined, token);
+        setAuditLogs(data);
+      } catch (error: any) {
+        console.error("Failed to fetch audit logs:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAuditLogs();
+  }, []);
 
   const getActionColor = (action: string) => {
-    switch (action) {
-      case "INSERT": return "text-primary";
-      case "STATUS_UPDATE": return "text-warning";
-      case "WAREHOUSE_ASSIGNMENT": return "text-success";
-      default: return "text-foreground";
-    }
+    if (action.startsWith("STATUS_UPDATE")) return "text-amber-600";
+    if (action === "CREATE") return "text-blue-600";
+    if (action === "SLOT_ASSIGNED") return "text-green-600";
+    return "text-slate-600";
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-GB', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div>
-      <div className="mb-6 bg-white rounded-xl border border-border p-6">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+      <div className="mb-6 bg-white rounded-xl border border-border p-6 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
             <FileText className="w-6 h-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-lg text-foreground">Audit Trail</h2>
-            <p className="text-sm text-muted-foreground">Complete history of system activities</p>
+            <h2 className="text-lg font-bold text-foreground">Audit Trail</h2>
+            <p className="text-sm text-muted-foreground">Complete history of system activities — Immutable Records</p>
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
+      <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
-            <thead className="bg-background">
+          <table className="w-full min-w-[1000px]">
+            <thead className="bg-slate-50/50">
               <tr>
-                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Timestamp</th>
-                <th className="text-left px-6 py-4 text-sm text-muted-foreground">User</th>
-                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Entity</th>
-                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Action</th>
-                <th className="text-left px-6 py-4 text-sm text-muted-foreground">Old Value</th>
-                <th className="text-left px-6 py-4 text-sm text-muted-foreground">New Value</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Timestamp</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">User</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Entity</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Action</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">Old Value</th>
+                <th className="text-left px-6 py-4 text-xs font-bold text-muted-foreground uppercase tracking-wider">New Value</th>
               </tr>
             </thead>
-            <tbody>
-              {auditLogs.map((log, index) => (
-                <tr key={index} className="border-t border-border">
-                  <td className="px-6 py-4 text-sm text-foreground">{log.timestamp}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{log.user}</td>
-                  <td className="px-6 py-4 text-sm text-foreground">{log.entity}</td>
-                  <td className="px-6 py-4">
-                    <span className={`text-xs font-medium ${getActionColor(log.action)}`}>
-                      {log.action}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-sm text-muted-foreground">{log.oldValue}</td>
-                  <td className="px-6 py-4 text-sm text-foreground font-medium">{log.newValue}</td>
+            <tbody className="divide-y divide-border">
+              {auditLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground italic">No audit records found.</td>
                 </tr>
-              ))}
+              ) : (
+                auditLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-6 py-4 text-sm font-medium text-slate-600 whitespace-nowrap">
+                      {formatDate(log.timestamp)}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-bold text-foreground">
+                      {log.user?.username || "System"}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-foreground">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-tight">
+                        {log.entity_name}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs font-bold uppercase tracking-wide ${getActionColor(log.action)}`}>
+                        {log.action.replace(/_/g, " ")}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-[11px] font-mono text-muted-foreground max-w-[200px] truncate">
+                      {log.old_value ? JSON.stringify(log.old_value) : "-"}
+                    </td>
+                    <td className="px-6 py-4 text-[11px] font-mono text-foreground font-medium max-w-[200px] truncate">
+                      {log.new_value ? JSON.stringify(log.new_value) : "-"}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
