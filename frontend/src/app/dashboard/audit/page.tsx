@@ -16,7 +16,7 @@ export default function SuperAdminPage() {
         setLoading(true);
         if (!token) return;
 
-        const data = await apiRequest("/audit-logs", "GET", undefined, token);
+        const data = await apiRequest("/audit-logs/", "GET", undefined, token);
         setAuditLogs(data);
       } catch (error: any) {
         console.error("Failed to fetch audit logs:", error.message);

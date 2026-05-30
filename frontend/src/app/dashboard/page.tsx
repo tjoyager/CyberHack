@@ -63,7 +63,7 @@ export default function DashboardOverview() {
           apiRequest("/analytics/lot-status-summary", "GET", undefined, token),
           apiRequest("/analytics/qc-rejection-rate", "GET", undefined, token),
           apiRequest("/analytics/warehouse-utilization", "GET", undefined, token),
-          apiRequest("/lots?limit=5", "GET", undefined, token),
+          apiRequest("/lots/?limit=5", "GET", undefined, token),
         ]);
 
         // Parse status summary

@@ -50,9 +50,9 @@ export default function IntakeStaffPage() {
 
       try {
         const [materialsData, suppliersData, lotsData] = await Promise.all([
-          apiRequest("/materials", "GET", undefined, token),
-          apiRequest("/suppliers", "GET", undefined, token),
-          apiRequest("/lots", "GET", undefined, token),
+          apiRequest("/materials/", "GET", undefined, token),
+          apiRequest("/suppliers/", "GET", undefined, token),
+          apiRequest("/lots/", "GET", undefined, token),
         ]);
 
         setMaterials(materialsData.length > 0 ? materialsData : [

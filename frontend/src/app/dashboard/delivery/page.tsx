@@ -33,8 +33,8 @@ export default function DeliveryStaffPage() {
       if (!token) return;
 
       const [lotsData, materialsData] = await Promise.all([
-        apiRequest("/lots", "GET", undefined, token),
-        apiRequest("/materials", "GET", undefined, token),
+        apiRequest("/lots/", "GET", undefined, token),
+        apiRequest("/materials/", "GET", undefined, token),
       ]);
 
       // Only show IN_PRODUCTION and DELIVERED for Delivery Staff
@@ -62,7 +62,7 @@ export default function DeliveryStaffPage() {
     try {
       if (!token) throw new Error("Not authenticated");
 
-      await apiRequest("/delivery-orders", "POST", {
+      await apiRequest("/delivery-orders/", "POST", {
         lot_id: deliveryModal.lot.id,
         driver_name: deliveryData.driver_name,
         vehicle_plate: deliveryData.vehicle_plate,

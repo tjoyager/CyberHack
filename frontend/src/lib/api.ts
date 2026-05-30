@@ -58,11 +58,11 @@ export async function verifyOTPRequest(username: string, otp_code: string) {
 }
 
 export async function getLots(token: string) {
-  return apiRequest('/lots', 'GET', undefined, token);
+  return apiRequest('/lots/', 'GET', undefined, token);
 }
 
 export async function createLot(data: any, token: string) {
-  return apiRequest('/lots', 'POST', data, token);
+  return apiRequest('/lots/', 'POST', data, token);
 }
 
 export async function updateLotQC(lotId: string, data: any, token: string) {

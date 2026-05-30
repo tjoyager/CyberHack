@@ -32,8 +32,8 @@ export default function QCInspectorPage() {
       if (!token) return;
 
       const [lotsData, materialsData] = await Promise.all([
-        apiRequest("/lots", "GET", undefined, token),
-        apiRequest("/materials", "GET", undefined, token),
+        apiRequest("/lots/", "GET", undefined, token),
+        apiRequest("/materials/", "GET", undefined, token),
       ]);
 
       setLots(lotsData);

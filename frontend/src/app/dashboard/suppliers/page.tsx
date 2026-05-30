@@ -29,7 +29,7 @@ export default function SuppliersPage() {
       setLoading(true);
       if (!token) return;
 
-      const data = await apiRequest("/suppliers", "GET", undefined, token);
+      const data = await apiRequest("/suppliers/", "GET", undefined, token);
       setSuppliers(data);
     } catch (error: any) {
       console.error("Failed to fetch suppliers:", error.message);
@@ -44,7 +44,7 @@ export default function SuppliersPage() {
     try {
       if (!token) throw new Error("Not authenticated");
 
-      await apiRequest("/suppliers", "POST", formData, token);
+      await apiRequest("/suppliers/", "POST", formData, token);
       await fetchSuppliers();
       setShowAddModal(false);
       setFormData({ company_name: "", contact_person: "", phone: "", email: "", address: "" });
