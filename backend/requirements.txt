@@ -9,6 +9,7 @@ python-multipart
 pydantic-settings
 pydantic[email]
 alembic
+google-generativeai
 
 # Testing
 pytest

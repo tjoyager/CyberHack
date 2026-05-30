@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Plus, Sparkles, Upload, FileText, X, Loader2 } from "lucide-react";
 import { apiRequest, createLot } from "@/lib/api";
 import { useAuth } from "@/lib/auth-context";
 
 export default function IntakeStaffPage() {
   const { token } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     material_id: "",
@@ -19,10 +20,7 @@ export default function IntakeStaffPage() {
   const [lots, setLots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-
-  const [showAIModal, setShowAIModal] = useState(false);
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   useEffect(() => {
     fetchInitialData();
@@ -32,7 +30,7 @@ export default function IntakeStaffPage() {
     try {
       setLoading(true);
       if (!token) {
-        // Fallback if no token (e.g. dev mode without login)
+        // Fallback dummy data
         setMaterials([
           { id: "m1", name: "Vanilla Extract" },
           { id: "m2", name: "Patchouli Oil" },
@@ -55,62 +53,59 @@ export default function IntakeStaffPage() {
           apiRequest("/lots/", "GET", undefined, token),
         ]);
 
-        setMaterials(materialsData.length > 0 ? materialsData : [
-          { id: "m1", name: "Vanilla Extract" },
-          { id: "m2", name: "Patchouli Oil" }
-        ]);
-        setSuppliers(suppliersData.length > 0 ? suppliersData : [
-          { id: "s1", company_name: "PT Tani Organik" }
-        ]);
+        setMaterials(materialsData);
+        setSuppliers(suppliersData);
         setLots(lotsData);
       } catch (innerError) {
-        // Fallback dummy data on API failure
-        setMaterials([
-          { id: "m1", name: "Vanilla Extract" },
-          { id: "m2", name: "Patchouli Oil" },
-          { id: "m3", name: "Lavender Essence" }
-        ]);
-        setSuppliers([
-          { id: "s1", company_name: "PT Tani Organik" },
-          { id: "s2", company_name: "Global Botanics Ltd" }
-        ]);
-        setLots([
-          { id: "l1", lot_number: "LOT-2026-001", material_id: "m1", quantity_kg: 250.50, status: "PENDING_QC", created_at: new Date().toISOString() }
-        ]);
+        console.error("API Fetch Error:", innerError);
       }
-    } catch (error: any) {
-      console.error("Failed to fetch data:", error.message);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setUploadedFile(file);
+    if (!file) return;
+
+    setIsAiLoading(true);
+    const formDataObj = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/lots/ai-extract`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formDataObj
+      });
+
+      if (!response.ok) throw new Error("AI Extraction failed");
+
+      const data = await response.json();
+      
+      // Logic to find IDs based on extracted names
+      const matchedMaterial = materials.find(m => 
+        m.name.toLowerCase().includes(data.material_name?.toLowerCase())
+      );
+      const matchedSupplier = suppliers.find(s => 
+        s.company_name.toLowerCase().includes(data.supplier_name?.toLowerCase())
+      );
+
+      setFormData({
+        material_id: matchedMaterial?.id || "",
+        supplier_id: matchedSupplier?.id || "",
+        quantity_kg: data.quantity_kg?.toString() || "",
+      });
+
+    } catch (error) {
+      console.error("AI Extraction Error:", error);
+      alert("Failed to extract data. Please fill manually.");
+    } finally {
+      setIsAiLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  };
-
-  const handleAIExtract = () => {
-    if (!uploadedFile) return;
-
-    setIsProcessing(true);
-
-    // Simulate AI processing
-    setTimeout(() => {
-      // Pick a random material and supplier from the real list
-      if (materials.length > 0 && suppliers.length > 0) {
-        setFormData({
-          material_id: materials[Math.floor(Math.random() * materials.length)].id,
-          supplier_id: suppliers[Math.floor(Math.random() * suppliers.length)].id,
-          quantity_kg: (Math.floor(Math.random() * 500) + 100).toString(),
-        });
-      }
-      setIsProcessing(false);
-      setShowAIModal(false);
-      setUploadedFile(null);
-    }, 2000);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,7 +114,6 @@ export default function IntakeStaffPage() {
     try {
       if (!token) throw new Error("Not authenticated");
 
-      // Payload matching backend schema (material_id, supplier_id, quantity_kg)
       const payload = {
         material_id: formData.material_id,
         supplier_id: formData.supplier_id || null,
@@ -127,20 +121,14 @@ export default function IntakeStaffPage() {
       };
 
       const newLot = await createLot(payload, token);
-
-      // Optimistic UI: Prepend the newly created lot to the list
       setLots(prev => [newLot, ...prev]);
 
-      // Reset form
       setFormData({
         material_id: "",
         supplier_id: "",
         quantity_kg: "",
       });
-      
-      console.log("Lot created successfully:", newLot);
     } catch (error: any) {
-      console.error("Submission failed:", error.message);
       alert("Error: " + error.message);
     } finally {
       setSubmitting(false);
@@ -169,13 +157,32 @@ export default function IntakeStaffPage() {
       <div className="bg-white rounded-xl border border-border p-4 sm:p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
           <h2 className="text-base sm:text-lg font-bold text-foreground">Register New Material</h2>
+          
+          <input 
+            type="file" 
+            accept="image/*" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleFileChange}
+          />
+
           <button
             type="button"
-            onClick={() => setShowAIModal(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-success text-white hover:opacity-90 transition-opacity text-sm sm:text-base shadow-sm"
+            disabled={isAiLoading}
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-primary to-success text-white hover:opacity-90 transition-opacity text-sm sm:text-base shadow-sm disabled:opacity-70"
           >
-            <Sparkles className="w-4 sm:w-5 h-4 sm:h-5" />
-            Auto-Fill with AI
+            {isAiLoading ? (
+              <>
+                <Loader2 className="w-4 sm:w-5 h-4 sm:h-5 animate-spin" />
+                Scanning...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 sm:w-5 h-4 sm:h-5" />
+                Auto-Fill with AI
+              </>
+            )}
           </button>
         </div>
         <form onSubmit={handleSubmit}>
@@ -277,120 +284,6 @@ export default function IntakeStaffPage() {
           </table>
         </div>
       </div>
-
-      {showAIModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-6 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl border border-border shadow-2xl w-full max-w-lg overflow-hidden">
-            <div className="p-6 border-b border-border flex items-center justify-between bg-slate-50/50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-r from-primary to-success flex items-center justify-center shadow-sm">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl font-bold text-foreground">Auto-Fill with AI</h2>
-                  <p className="text-sm text-muted-foreground">Upload a document to extract material information</p>
-                </div>
-              </div>
-              <button
-                onClick={() => {
-                  setShowAIModal(false);
-                  setUploadedFile(null);
-                }}
-                className="w-8 h-8 rounded-lg hover:bg-white transition-colors flex items-center justify-center text-muted-foreground border border-transparent hover:border-border"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              {!uploadedFile ? (
-                <label className="block">
-                  <div className="border-2 border-dashed border-border rounded-xl p-8 hover:border-primary transition-colors cursor-pointer bg-slate-50/30">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Upload className="w-8 h-8 text-primary" />
-                      </div>
-                      <div className="text-center">
-                        <p className="font-bold text-foreground mb-1">Upload Document</p>
-                        <p className="text-sm text-muted-foreground">
-                          PDF, DOC, DOCX, or image files (Max 10MB)
-                        </p>
-                      </div>
-                      <div className="mt-2 px-4 py-2 rounded-lg bg-white border border-border text-foreground text-sm font-semibold shadow-sm">
-                        Browse Files
-                      </div>
-                    </div>
-                  </div>
-                  <input
-                    type="file"
-                    onChange={handleFileUpload}
-                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                    className="hidden"
-                  />
-                </label>
-              ) : (
-                <div className="animate-in slide-in-from-bottom-2 duration-300">
-                  <div className="p-4 rounded-lg border border-border bg-slate-50 mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold text-foreground truncate">{uploadedFile.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {(uploadedFile.size / 1024).toFixed(2)} KB
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => setUploadedFile(null)}
-                        className="w-8 h-8 rounded-lg hover:bg-white transition-colors flex items-center justify-center text-muted-foreground border border-border"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="p-4 rounded-lg bg-blue-50 border border-blue-100 mb-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>AI Extraction Ready:</strong> We'll automatically identify the material, supplier, and quantity from this document.
-                    </p>
-                  </div>
-
-                  {isProcessing && (
-                    <div className="p-4 rounded-lg bg-primary/10 mb-4 animate-pulse">
-                      <div className="flex items-center gap-3">
-                        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        <p className="text-sm text-primary font-bold">Processing document with AI...</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-border flex gap-3 justify-end bg-slate-50/50">
-              <button
-                onClick={() => {
-                  setShowAIModal(false);
-                  setUploadedFile(null);
-                }}
-                className="px-4 py-2 rounded-lg border border-border bg-white hover:bg-slate-50 transition-colors text-foreground font-semibold"
-                disabled={isProcessing}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAIExtract}
-                disabled={!uploadedFile || isProcessing}
-                className="flex items-center gap-2 px-6 py-2 rounded-lg bg-gradient-to-r from-primary to-emerald-600 text-white hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-md shadow-primary/20"
-              >
-                <Sparkles className="w-4 h-4" />
-                {isProcessing ? "Processing..." : "Extract with AI"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

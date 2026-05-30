@@ -117,19 +117,19 @@ class User(Base):
 
     # ── Relationships ──
     otp_tokens: Mapped[list["OTPToken"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="user", cascade="all, delete-orphan"
     )
     audit_logs: Mapped[list["AuditLog"]] = relationship(
-        back_populates="user", cascade="all, delete-orphan", lazy="selectin"
+        back_populates="user", cascade="all, delete-orphan"
     )
     created_lots: Mapped[list["Lot"]] = relationship(
-        back_populates="creator", foreign_keys="[Lot.created_by]", lazy="selectin"
+        back_populates="creator", foreign_keys="[Lot.created_by]"
     )
     qc_checks: Mapped[list["QCCheck"]] = relationship(
-        back_populates="inspector", lazy="selectin"
+        back_populates="inspector"
     )
     delivery_orders: Mapped[list["DeliveryOrder"]] = relationship(
-        back_populates="creator", lazy="selectin"
+        back_populates="creator"
     )
 
     def __repr__(self) -> str:
@@ -263,16 +263,16 @@ class Lot(Base):
     )
 
     # ── Relationships ──
-    material: Mapped["Material"] = relationship(back_populates="lots", lazy="selectin")
-    supplier: Mapped[Optional["Supplier"]] = relationship(back_populates="lots", lazy="selectin")
+    material: Mapped["Material"] = relationship(back_populates="lots")
+    supplier: Mapped[Optional["Supplier"]] = relationship(back_populates="lots")
     creator: Mapped["User"] = relationship(
-        back_populates="created_lots", foreign_keys=[created_by], lazy="selectin"
+        back_populates="created_lots", foreign_keys=[created_by]
     )
     qc_checks: Mapped[list["QCCheck"]] = relationship(
-        back_populates="lot", lazy="selectin"
+        back_populates="lot"
     )
     delivery_orders: Mapped[list["DeliveryOrder"]] = relationship(
-        back_populates="lot", lazy="selectin"
+        back_populates="lot"
     )
 
     def __repr__(self) -> str:

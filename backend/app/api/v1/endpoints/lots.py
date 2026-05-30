@@ -8,11 +8,14 @@ Business rules (CONTEXT.md §7):
   - Every UPDATE writes to audit_logs in the SAME transaction.
 """
 
+import json
+import os
 from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+import google.generativeai as genai
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1 import deps
@@ -23,6 +26,10 @@ from app.schemas.schemas import LotCreate, LotRead, LotUpdateQC, LotUpdateWareho
 from app.services import sheets_sync
 
 router = APIRouter()
+
+# Konfigurasi Google Gemini API
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
 
 @router.get("/", response_model=list[LotRead])
 async def read_lots(
@@ -122,3 +129,37 @@ async def update_lot_warehouse(
         }
     )
     return lot
+
+# ==========================================
+# FITUR AI AUTO-FILL (GOOGLE GEMINI VISION)
+# ==========================================
+@router.post("/ai-extract")
+async def ai_extract(
+    file: UploadFile = File(...),
+    current_user: User = Depends(deps.get_current_user) # Mengamankan endpoint agar hanya user login yang bisa akses
+) -> Any:
+    """
+    Menerima gambar Delivery Order (DO) / Surat Jalan, 
+    dan mengekstrak data menggunakan Google Gemini 1.5 Flash Vision.
+    """
+    try:
+        image_bytes = await file.read()
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        
+        prompt = (
+            "You are an OCR and data extraction system for Sima Arome ERP. "
+            "Extract the following from this Delivery Order image: material_name, "
+            "supplier_name, and quantity_kg. Return ONLY a valid JSON object. "
+            "Do not include markdown code blocks like ```json."
+        )
+        
+        response = model.generate_content([
+            prompt, 
+            {"mime_type": file.content_type, "data": image_bytes}
+        ])
+        
+        # Parse and return the extracted JSON data
+        return json.loads(response.text.strip())
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

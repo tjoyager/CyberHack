@@ -20,10 +20,12 @@ async def generate_lot_number(db: AsyncSession) -> str:
     return f"{prefix}{(count or 0) + 1:03d}"
 
 
+from sqlalchemy.orm import selectinload
+
 async def get_lots(
     db: AsyncSession, skip: int = 0, limit: int = 100, lot_status: Optional[LotStatus] = None
 ) -> list[Lot]:
-    stmt = select(Lot)
+    stmt = select(Lot).options(selectinload(Lot.material), selectinload(Lot.supplier))
     if lot_status:
         stmt = stmt.where(Lot.status == lot_status)
     stmt = stmt.offset(skip).limit(limit)
@@ -32,7 +34,12 @@ async def get_lots(
 
 
 async def get_lot(db: AsyncSession, lot_id: UUID) -> Optional[Lot]:
-    return await db.get(Lot, lot_id)
+    result = await db.execute(
+        select(Lot)
+        .where(Lot.id == lot_id)
+        .options(selectinload(Lot.material), selectinload(Lot.supplier))
+    )
+    return result.scalars().first()
 
 
 async def create_lot(db: AsyncSession, lot_in: LotCreate, user_id: UUID) -> Lot:
