@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { Truck, X, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 export default function DeliveryStaffPage() {
+  const { token } = useAuth();
   const [lots, setLots] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -23,12 +25,11 @@ export default function DeliveryStaffPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [token]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("accessToken");
       if (!token) return;
 
       const [lotsData, materialsData] = await Promise.all([
@@ -59,7 +60,6 @@ export default function DeliveryStaffPage() {
     if (!deliveryModal.lot || !deliveryData.destination) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("accessToken");
       if (!token) throw new Error("Not authenticated");
 
       await apiRequest("/delivery-orders", "POST", {

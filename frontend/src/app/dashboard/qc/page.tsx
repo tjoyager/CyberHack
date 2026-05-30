@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { Eye as EyeIcon, CheckCircle as CheckIcon, XCircle as XIcon, X as CloseIcon, Loader2 as LoaderIcon } from "lucide-react";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 export default function QCInspectorPage() {
+  const { token } = useAuth();
   const [lots, setLots] = useState<any[]>([]);
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,12 +24,11 @@ export default function QCInspectorPage() {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [token]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("accessToken");
       if (!token) return;
 
       const [lotsData, materialsData] = await Promise.all([
@@ -53,7 +54,6 @@ export default function QCInspectorPage() {
     if (!inspectionModal.lot) return;
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("accessToken");
       if (!token) throw new Error("Not authenticated");
 
       await apiRequest(`/lots/${inspectionModal.lot.id}/qc`, "PATCH", {

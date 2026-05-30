@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { FileText, Loader2 } from "lucide-react";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 export default function SuperAdminPage() {
+  const { token } = useAuth();
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -12,7 +14,6 @@ export default function SuperAdminPage() {
     const fetchAuditLogs = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem("accessToken");
         if (!token) return;
 
         const data = await apiRequest("/audit-logs", "GET", undefined, token);
@@ -25,7 +26,7 @@ export default function SuperAdminPage() {
     };
 
     fetchAuditLogs();
-  }, []);
+  }, [token]);
 
   const getActionColor = (action: string) => {
     if (action.startsWith("STATUS_UPDATE")) return "text-amber-600";

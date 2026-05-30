@@ -3,8 +3,10 @@
 import { useState, useEffect } from "react";
 import { Users, Plus, X, Loader2, Building2, Phone, Mail, MapPin } from "lucide-react";
 import { apiRequest } from "@/lib/api";
+import { useAuth } from "@/lib/auth-context";
 
 export default function SuppliersPage() {
+  const { token } = useAuth();
   const [suppliers, setSuppliers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -20,12 +22,11 @@ export default function SuppliersPage() {
 
   useEffect(() => {
     fetchSuppliers();
-  }, []);
+  }, [token]);
 
   const fetchSuppliers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("accessToken");
       if (!token) return;
 
       const data = await apiRequest("/suppliers", "GET", undefined, token);
@@ -41,7 +42,6 @@ export default function SuppliersPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const token = localStorage.getItem("accessToken");
       if (!token) throw new Error("Not authenticated");
 
       await apiRequest("/suppliers", "POST", formData, token);
