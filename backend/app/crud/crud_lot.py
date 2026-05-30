@@ -50,6 +50,7 @@ async def create_lot(db: AsyncSession, lot_in: LotCreate, user_id: UUID) -> Lot:
     db_obj._current_user_id = user_id
     db.add(db_obj)
     await db.flush()
+    await db.refresh(db_obj, ["material", "supplier"])
     return db_obj
 
 
@@ -82,6 +83,7 @@ async def update_lot_qc(db: AsyncSession, lot_id: UUID, lot_update: LotUpdateQC,
     lot._current_user_id = user_id
 
     await db.flush()
+    await db.refresh(lot, ["material"])
     return lot
 
 
@@ -108,6 +110,7 @@ async def update_lot_warehouse(
     lot._current_user_id = user_id
 
     await db.flush()
+    await db.refresh(lot, ["material"])
     return lot
 
 async def create_delivery_order(
@@ -139,4 +142,6 @@ async def create_delivery_order(
     )
     db.add(delivery)
     await db.flush()
+    await db.refresh(delivery, ["lot"])
+    await db.refresh(delivery.lot, ["material"])
     return delivery
