@@ -43,7 +43,8 @@ async def get_lot(db: AsyncSession, lot_id: UUID) -> Optional[Lot]:
 
 
 async def create_lot(db: AsyncSession, lot_in: LotCreate, user_id: UUID) -> Lot:
-    await db.execute(text("SELECT pg_advisory_xact_lock(hashtext('lot_generation'))"))
+    if db.bind.dialect.name == "postgresql":
+        await db.execute(text("SELECT pg_advisory_xact_lock(hashtext('lot_generation'))"))
     
     lot_number = await generate_lot_number(db)
     db_obj = Lot(

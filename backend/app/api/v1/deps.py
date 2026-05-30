@@ -56,8 +56,10 @@ async def get_current_user(
         raise HTTPException(status_code=400, detail="Inactive user.")
         
     # Explicitly set the PostgreSQL session variable for Audit triggers
-    from sqlalchemy import text
-    await db.execute(text("SELECT set_config('app.current_user_id', :user_id, true)"), {"user_id": str(user.id)})
+    # We only run this if not using SQLite (which is used in tests)
+    if db.bind.dialect.name == "postgresql":
+        from sqlalchemy import text
+        await db.execute(text("SELECT set_config('app.current_user_id', :user_id, true)"), {"user_id": str(user.id)})
     
     return user
 

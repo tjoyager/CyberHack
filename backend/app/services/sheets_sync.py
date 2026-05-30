@@ -65,8 +65,9 @@ async def push_to_sheets(tab_name: str, data: dict[str, Any]) -> None:
             ]
         
         if values:
+            spreadsheet_id = getattr(settings, "GOOGLE_SHEETS_SPREADSHEET_ID", "mock_spreadsheet_id")
             await sheets_client.append_row(
-                settings.GOOGLE_SHEETS_SPREADSHEET_ID,
+                spreadsheet_id,
                 tab_name,
                 values
             )
