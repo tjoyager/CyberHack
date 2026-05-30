@@ -108,10 +108,34 @@ export default function SuperAdminPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-[11px] font-mono text-muted-foreground max-w-[200px] truncate">
-                      {log.old_value ? JSON.stringify(log.old_value) : "-"}
+                      {(() => {
+                        const oldObj = log.old_value;
+                        const newObj = log.new_value;
+                        if (!oldObj) return "-";
+                        const changes = Object.keys(oldObj).filter(k => oldObj[k] !== newObj?.[k]);
+                        if (changes.length === 0) return "-";
+                        return changes.map((k, i) => (
+                          <span key={k}>
+                            {i > 0 && ", "}
+                            {k}: <span className="px-1 py-0.5 rounded bg-red-50 text-red-600 line-through">{String(oldObj[k])}</span>
+                          </span>
+                        ));
+                      })()}
                     </td>
                     <td className="px-6 py-4 text-[11px] font-mono text-foreground font-medium max-w-[200px] truncate">
-                      {log.new_value ? JSON.stringify(log.new_value) : "-"}
+                      {(() => {
+                        const oldObj = log.old_value;
+                        const newObj = log.new_value;
+                        if (!newObj) return "-";
+                        const changes = Object.keys(newObj).filter(k => newObj[k] !== oldObj?.[k]);
+                        if (changes.length === 0) return "-";
+                        return changes.map((k, i) => (
+                          <span key={k}>
+                            {i > 0 && ", "}
+                            {k}: <span className="px-1 py-0.5 rounded bg-green-50 text-green-700">{String(newObj[k])}</span>
+                          </span>
+                        ));
+                      })()}
                     </td>
                   </tr>
                 ))

@@ -54,6 +54,11 @@ async def get_current_user(
         raise HTTPException(status_code=404, detail="User not found.")
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user.")
+        
+    # Explicitly set the PostgreSQL session variable for Audit triggers
+    from sqlalchemy import text
+    await db.execute(text("SET LOCAL app.current_user_id = :user_id"), {"user_id": str(user.id)})
+    
     return user
 
 
