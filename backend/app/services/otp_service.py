@@ -12,8 +12,8 @@ from app.core import security
 from app.models.models import OTPToken, OTPChannel
 
 
-async def create_and_send_otp(db: AsyncSession, user_id: UUID, email: str, purpose: str = "LOGIN") -> None:
-    """Generate, hash, save, and simulate sending an OTP."""
+async def create_and_send_otp(db: AsyncSession, user_id: UUID, email: str, purpose: str = "LOGIN") -> str:
+    """Generate, hash, save, and simulate sending an OTP. Returns plaintext OTP."""
     # 1. Invalidate old OTPs for this purpose
     await db.execute(
         update(OTPToken)
@@ -45,6 +45,8 @@ async def create_and_send_otp(db: AsyncSession, user_id: UUID, email: str, purpo
     print(f"Subject: Your Sima Arome OTP Code")
     print(f"Body: Your OTP for {purpose} is: {plain_otp}. It expires in 5 minutes.")
     print(f"{'='*50}\n")
+
+    return plain_otp
 
 
 async def verify_otp(db: AsyncSession, user_id: UUID, plain_otp: str, purpose: str = "LOGIN") -> bool:

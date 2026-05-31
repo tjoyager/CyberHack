@@ -38,10 +38,13 @@ async def login_request_otp(
         raise HTTPException(status_code=400, detail="Inactive user.")
 
     # Generate and send OTP
-    await otp_service.create_and_send_otp(db, user.id, user.email, purpose="LOGIN")
+    plain_otp = await otp_service.create_and_send_otp(db, user.id, user.email, purpose="LOGIN")
     await db.commit()
-    
-    return {"status": "otp_sent", "email": user.email, "message": "OTP sent to your email."}
+
+    response: dict = {"status": "otp_sent", "email": user.email, "message": "OTP sent to your email."}
+    if settings.APP_ENV != "production":
+        response["dev_otp"] = plain_otp
+    return response
 
 
 @router.post("/verify-otp", response_model=Token)
