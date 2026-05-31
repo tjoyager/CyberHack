@@ -43,7 +43,6 @@ timeoutMs = 20000
 [userenv]
 
 [userenv.shared]
-GEMINI_API_KEY = "AQ.Ab8RN6KcJg7d9oOFdh6B75lPSoQ2HJa8FyUmIOURrjVhA_vdSw"
 
 [[ports]]
 localPort = 8000
