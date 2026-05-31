@@ -1,0 +1,19 @@
+fastapi
+uvicorn
+sqlalchemy[asyncio]>=2.0
+asyncpg
+psycopg2-binary
+python-jose
+argon2-cffi
+python-multipart
+pydantic-settings
+pydantic[email]
+alembic
+google-generativeai
+
+# Testing
+pytest
+pytest-asyncio
+httpx
+aiosqlite
+faker

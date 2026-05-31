@@ -1,5 +1,4 @@
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const API_URL = `${baseURL}/api/v1`;
+const API_URL = '/api/v1';
 
 export async function apiRequest(
   endpoint: string,

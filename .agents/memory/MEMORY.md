@@ -1,0 +1,1 @@
+- [asyncpg-ssl-fix](asyncpg-ssl-fix.md) — Replit DATABASE_URL has ?sslmode=require which asyncpg rejects; must strip it and pass ssl="require" via connect_args.
