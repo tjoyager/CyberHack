@@ -70,7 +70,7 @@ export default function IntakeStaffPage() {
 
     setIsAiLoading(true);
     const formDataObj = new FormData();
-    formData.append("file", file);
+    formDataObj.append("file", file);
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/lots/ai-extract`, {
