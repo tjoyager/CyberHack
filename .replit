@@ -18,3 +18,13 @@ expertMode = true
 [postMerge]
 path = "scripts/post-merge.sh"
 timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+DATABASE_URL = "postgresql://postgres.nkkzxwobntikqgfjowpp:SimaArome2026!@[aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres](https://aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres)"
+GEMINI_API_KEY = "AQ.Ab8RN6KcJg7d9oOFdh6B75lPSoQ2HJa8FyUmIOURrjVhA_vdSw"
+
+[[ports]]
+localPort = 26096
+externalPort = 80

@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Sima Arome ERP Lite"
+version = "1.0.0"
+id = "artifacts/sima-arome-erp"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 26096
+
+[services.development]
+run = "pnpm --filter @workspace/sima-arome-erp run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/sima-arome-erp", "run", "build" ]
+publicDir = "artifacts/sima-arome-erp/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "26096"
+BASE_PATH = "/"
