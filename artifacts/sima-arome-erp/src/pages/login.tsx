@@ -45,7 +45,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const data = await verifyOTPRequest(username, otpCode);
-      const profile = await apiRequest("/users/me/", "GET", undefined, data.access_token);
+      const profile = await apiRequest("/users/me", "GET", undefined, data.access_token);
       
       login(data.access_token, {
         username: profile.username,
