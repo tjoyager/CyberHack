@@ -73,7 +73,7 @@ export default function IntakeStaffPage() {
     formDataObj.append("file", file);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/lots/ai-extract`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ''}/api/v1/lots/ai-extract`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`

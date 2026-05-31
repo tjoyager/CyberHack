@@ -68,7 +68,7 @@ export default function IntakeStaffPage() {
     formDataObj.append("file", file);
 
     try {
-      const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const apiBase = import.meta.env.VITE_API_URL || "";
       const response = await fetch(`${apiBase}/api/v1/lots/ai-extract`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
