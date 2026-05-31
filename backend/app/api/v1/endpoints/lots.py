@@ -10,6 +10,7 @@ Business rules (CONTEXT.md §7):
 
 import json
 import os
+import traceback
 from datetime import datetime, timezone
 from typing import Any, Optional
 from uuid import UUID
@@ -143,23 +144,42 @@ async def ai_extract(
     dan mengekstrak data menggunakan Google Gemini 1.5 Flash Vision.
     """
     try:
+        # 1. API Key Validation
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            print("ERROR: GEMINI_API_KEY is not set in environment variables.")
+            raise HTTPException(status_code=500, detail="Gemini API Key is missing.")
+
+        # 2. Read file
         image_bytes = await file.read()
+
+        # 3. Model Initialization
         model = genai.GenerativeModel("gemini-1.5-flash")
-        
+
         prompt = (
             "You are an OCR and data extraction system for Sima Arome ERP. "
             "Extract the following from this Delivery Order image: material_name, "
             "supplier_name, and quantity_kg. Return ONLY a valid JSON object. "
             "Do not include markdown code blocks like ```json."
         )
-        
+
+        # 4. Generate Content
         response = model.generate_content([
             prompt, 
             {"mime_type": file.content_type, "data": image_bytes}
         ])
-        
-        # Parse and return the extracted JSON data
-        return json.loads(response.text.strip())
-        
+
+        # 5. Sanitasi dan Parsing JSON
+        text_response = response.text.strip()
+        # Terkadang Gemini masih mengembalikan ```json ... ``` meskipun sudah dilarang di prompt
+        if text_response.startswith("```json"):
+            text_response = text_response.split("```json")[1].split("```")[0].strip()
+        elif text_response.startswith("```"):
+            text_response = text_response.split("```")[1].split("```")[0].strip()
+
+        return json.loads(text_response)
+
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"ERROR in /ai-extract: {str(e)}")
+        traceback.print_exc() # Explicitly print traceback to terminal
+        raise HTTPException(status_code=500, detail=f"AI extraction error: {str(e)}")
